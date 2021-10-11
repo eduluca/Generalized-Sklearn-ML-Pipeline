@@ -8,16 +8,16 @@ with open('README.md') as f:
 
 
 setuptools.setup(
-    name='webapp',
-    version='1.0',
+    name='ML-Trainig-to-Testing-App',
+    version='1.0.0',
     packages=setuptools.find_packages(exclude=['tests']),
     include_package_data=True,
 
-    description='Example of Python web app with debian packaging (dh_virtualenv & systemd)',
+    description='',
     long_description=long_description,
-    author='Michal Horejsek',
-    author_email='horejsekmichal@gmail.com',
-    url='https://github.com/horejsek/python-webapp',
+    author='Jacob Salminen',
+    author_email='jsalminen@ufl.edu',
+    url='https://github.com/JacobSal/Generalized-Sklearn-ML-Pipeline',
 
     # All versions are fixed just for case. Once in while try to check for new versions.
     install_requires=[
@@ -71,14 +71,14 @@ setuptools.setup(
 
     entry_points={
         'console_scripts': [
-            'webapp = webapp.cli:main',
+            'mlapp = mlapp.cli:main',
         ],
     },
 
     classifiers=[
-        'Framework :: Flask',
+        'Framework :: Electron',
         'Intended Audience :: Developers',
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 1 - Alpha',
         'License :: Other/Proprietary License',
         'Natural Language :: English',
         'Operating System :: OS Independent',

@@ -124,7 +124,7 @@ def range_cont(set_min,set_max,incr,shift = 0,reverse = False):
 'end def'
 
 def adaptive_threshold(image,sW,bins,sub_sampling=True):      
-#this helps significantly, but les try adding sub sample
+#this helps significantly, but lets try adding sub sample
     nH,nW = image.shape
     new_image = np.zeros((nH,nW))
     sbxx = range_cont(0,nW,sW)

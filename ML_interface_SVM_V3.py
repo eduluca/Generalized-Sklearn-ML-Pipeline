@@ -12,13 +12,12 @@ import numpy as np
 # initialize the list of reference points and boolean indicating
 # whether cropping is being performed or not
 import DataManager
-
-
+import sys
 
 refPt = []
 
 cropping = False
-# global DEFAULT 
+# global DEFAULT
 # DEFAULT = np.array([])
 
 def click_and_crop(event, x, y, flags, param):
@@ -126,6 +125,8 @@ class PanZoomWindow(object):
         self.incMode = True
         self.a = None
         self.b = None
+        self.tmp_pzsul0=[]
+        self.tmp_pzsshape0=[]
         self.points = [[]]
         self.points_display = [[]]
         self.poly_counter = -1
@@ -204,6 +205,8 @@ class PanZoomWindow(object):
             coordsInDisplayedImage = np.array([xc,yc])
             coordsInFullImage = self.panAndZoomState.ul+coordsInDisplayedImage
             pzs = self.panAndZoomState
+            self.tmp_pzsul0.append(pzs.ul)
+            self.tmp_pzsshape0.append(pzs.shape)
             self.points[self.poly_counter].append([int(coordsInFullImage[0]),int(coordsInFullImage[1])])
             self.points_display[self.poly_counter].append([int(coordsInDisplayedImage[0]),int(coordsInDisplayedImage[1])])            
             print("appending point: ",coordsInFullImage.astype(int))
@@ -225,21 +228,23 @@ class PanZoomWindow(object):
         'end if'
     
     def redraw(self):
-        pzs = self.panAndZoomState
         temp_wind = self.img_orig.copy()
         for p in range(0,len(self.points)):
+            pzs_ul = self.tmp_pzsul0[p]
+            pzs_shape = self.tmp_pzsshape0[p]
             pointstate = np.array(self.points_display[p]).reshape((-1,1,2))
             if self.points[p][1] == "l":
                 if self.points[p][0]:
-                    cv2.polylines(temp_wind[int(pzs.ul[0]):int(pzs.ul[0]+pzs.shape[0]), int(pzs.ul[1]):int(pzs.ul[1]+pzs.shape[1])] , [pointstate],False ,[255,0,0], 1)
+                    cv2.polylines(temp_wind[int(pzs_ul[0]):int(pzs_ul[0]+pzs_shape[0]), int(pzs_ul[1]):int(pzs_ul[1]+pzs_shape[1])] , [pointstate],False ,[255,0,0], 1)
                 else:
-                    cv2.polylines(temp_wind[int(pzs.ul[0]):int(pzs.ul[0]+pzs.shape[0]), int(pzs.ul[1]):int(pzs.ul[1]+pzs.shape[1])] , [pointstate],False ,[1,0,0], 1)
+                    cv2.polylines(temp_wind[int(pzs_ul[0]):int(pzs_ul[0]+pzs_shape[0]), int(pzs_ul[1]):int(pzs_ul[1]+pzs_shape[1])], [pointstate],False ,[1,0,0], 1)
             elif self.points[p][1] == "f":
                 if self.points[p][0]:
-                    cv2.fillPoly(temp_wind[int(pzs.ul[0]):int(pzs.ul[0]+pzs.shape[0]), int(pzs.ul[1]):int(pzs.ul[1]+pzs.shape[1])], [pointstate],[255,0,0])
+                    cv2.fillPoly(temp_wind[int(pzs_ul[0]):int(pzs_ul[0]+pzs_shape[0]), int(pzs_ul[1]):int(pzs_ul[1]+pzs_shape[1])], [pointstate],[255,0,0])
                 else:
-                    cv2.fillPoly(temp_wind[int(pzs.ul[0]):int(pzs.ul[0]+pzs.shape[0]), int(pzs.ul[1]):int(pzs.ul[1]+pzs.shape[1])], [pointstate],[1,0,0])
+                    cv2.fillPoly(temp_wind[int(pzs_ul[0]):int(pzs_ul[0]+pzs_shape[0]), int(pzs_ul[1]):int(pzs_ul[1]+pzs_shape[1])], [pointstate],[1,0,0])
         self.img = temp_wind
+        pzs = self.panAndZoomState
         cv2.imshow(self.WINDOW_NAME,self.img[int(pzs.ul[0]):int(pzs.ul[0]+pzs.shape[0]), int(pzs.ul[1]):int(pzs.ul[1]+pzs.shape[1])])
         cv2.waitKey(1)
         
@@ -283,6 +288,10 @@ class PanZoomWindow(object):
                 print('before: \n {}'.format(self.points))
                 del self.points[-2:]
                 del self.points_display[-2:]
+                print(self.tmp_pzsul0)
+                print(self.tmp_pzsshape0)
+                del self.tmp_pzsul0[-1:]
+                del self.tmp_pzsshape0[-1:]
                 self.poly_counter -= 1
                 self.retract_lines()
                 print('After: \n {}'.format(self.points))
@@ -353,14 +362,16 @@ def main(image,im_num,name):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    foldername = r"C:\Users\jsalm\Documents\GitHub\Image-Processing-w-XGB\images-5HT"
-    #dealing with the Channel situation: display RGB but edit gray scale
+    dirname = os.path.dirname(__file__)
+    foldername = os.path.join(dirname,"images-5HT")
+    # dealing with the Channel situation: display RGB but edit gray scale
     im_dir = DataManager.DataMang(foldername)
-    im_list = [i for i in range(0,im_dir.dir_len)]
-    count = 0
+    im_list = [i for i in range(im_dir.dir_len-1,-1,-1)]
+    count = 0 
+    # start from low end of directory and go to top. 
     for gen in im_dir.open_dir(im_list):
         image,nW,nH,chan,name = gen
-        print("1")
+        print("loading %s..."%name)
         wind = main(image,im_list[count],name)
         bool_im = import_train_data(name,(nW,nH),'trained-bin')
         plt.imshow(bool_im)

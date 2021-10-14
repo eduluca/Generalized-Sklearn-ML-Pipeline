@@ -9,6 +9,7 @@ import os
 import numpy as np
 import cv2
 import pickle
+import sys
 
 class DataMang:
     def __init__(self,directory):
@@ -17,24 +18,21 @@ class DataMang:
         self.dir_len = len([name for name in os.listdir(directory) if os.path.isfile(os.path.join(directory,name))])
     'end def'
     
-    def save_obj(obj):
+    def save_obj(self,obj):
         with open('mat.pkl', 'wb') as outfile:
             pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
         'end with'
     'end def'
     
-    def load_obj(obj):
+    def load_obj(self):
         with open('mat.pkl', 'rb') as infile:
-            result = pickle.load(infile)
+            result = pickle.load(self.directoryinfile)
         'end with'
         return result
     'end def'
     
     def _load_image(self,rootdir):
         im = np.array(cv2.imread(rootdir)[:,:,:]/255).astype(np.float32)
-        # im[im==0] = "nan"
-        # im[im==1] = np.nanmin(im)
-        # im[np.isnan(im)] = np.nanmin(im)
         return im
     
     def open_dir(self,im_list):
@@ -56,20 +54,20 @@ class DataMang:
             DESCRIPTION.
 
         """
-        count = 0
-        for root, dirs, files in os.walk(self.directory):
+        tmp_root = str()
+        tmp_files = []
+        for root,_,files in os.walk(self.directory):
             for f in files:
-                if isinstance(im_list,list):
-                    if count in im_list:
-                        impath = os.path.join(root,f)
-                        im = self._load_image(impath)
-                        name = [x for x in map(str.strip, f.split('.')) if x]
-                        nW,nH,chan = im.shape
-                        yield (im,nW,nH,chan,name[0])
-                    'end if'
-                count += 1
-                'end if'
-            'end for'
+                tmp_files.append(f)
+            'end'
+            tmp_root = root
+        'end'
+        for count in im_list:
+            f = tmp_files[count]
+            im = self._load_image(os.path.join(tmp_root,f))
+            name = [x for x in map(str.strip, f.split('.')) if x]
+            nW,nH,chan = im.shape
+            yield (im,nW,nH,chan,name[0])
         'end for'
     'end def'
 'end class'

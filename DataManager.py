@@ -62,12 +62,13 @@ class DataMang:
             'end'
             tmp_root = root
         'end'
+        tmp_files = sorted(tmp_files)
         for count in im_list:
             f = tmp_files[count]
             im = self._load_image(os.path.join(tmp_root,f))
             name = [x for x in map(str.strip, f.split('.')) if x]
             nW,nH,chan = im.shape
-            yield (im,nW,nH,chan,name[0])
+            yield (im,nW,nH,chan,name)
         'end for'
     'end def'
 'end class'

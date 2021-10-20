@@ -253,11 +253,12 @@ class PanZoomWindow(object):
         self.redraw()
     'end def'
     
-    def menuChange(self,k):
+    def menuChange(self,k,im_num,save_file):
         if k == ord('m'):
             print("""
                   2 tools: polyline or polyfill
                   press 't' to change tool
+                  press 's' to save current data
                   (Out of Service) press 'c' to change mode
                   (Out of Service) press 'q' to quit 
                   press 'r' to reset line
@@ -276,6 +277,8 @@ class PanZoomWindow(object):
                 elif self.tool_feature == "f":
                     self.tool_feature = "l"
                 return 0
+            if menSel == ord('s'):
+                self.export_point_data(im_num, save_file)
             # if menSel == ord('c'):
             #     print('changing mode')
             #     if self.incMode:
@@ -352,7 +355,7 @@ def main(image,im_num,name):
     # keep looping until the 'q' key is pressed
     while k != ord('q') and k != 27 and cv2.getWindowProperty(window.WINDOW_NAME,0) >=0:
         k = cv2.waitKey(0) 
-        window.menuChange(k)
+        window.menuChange(k,im_num,"trained-bin")
     'end while'
     # close all open windows
     cv2.destroyAllWindows()
@@ -366,12 +369,12 @@ if __name__ == "__main__":
     foldername = os.path.join(dirname,"images-5HT")
     # dealing with the Channel situation: display RGB but edit gray scale
     im_dir = DataManager.DataMang(foldername)
-    im_list = [i for i in range(im_dir.dir_len-1,-1,-1)]
+    im_list = [i for i in range(0,im_dir.dir_len)] #[i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)]
     count = 0 
     # start from low end of directory and go to top. 
     for gen in im_dir.open_dir(im_list):
         image,nW,nH,chan,name = gen
-        print("loading %s..."%name)
+        print("loading %s..."%(name))
         wind = main(image,im_list[count],name)
         bool_im = import_train_data(name,(nW,nH),'trained-bin')
         plt.imshow(bool_im)

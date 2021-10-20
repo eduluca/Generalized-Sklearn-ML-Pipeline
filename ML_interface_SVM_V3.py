@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Apr 13 15:04:48 2020
-
 @author: jsalm
 """
 
@@ -332,12 +331,10 @@ def import_train_data(im_name,imshape,filename):
         Width and Length of the image
     filename : string
         directory where images are being stored
-
     Returns
     -------
     bitimage : int16
         binary/integer image of true false labelings for training data
-
     """
     filedir = os.path.join(os.path.dirname(__file__),filename,im_name+"_traind.bin")
     bitimage = np.fromfile(filedir,dtype='int16')
@@ -366,7 +363,7 @@ if __name__ == "__main__":
     foldername = os.path.join(dirname,"images-5HT")
     # dealing with the Channel situation: display RGB but edit gray scale
     im_dir = DataManager.DataMang(foldername)
-    im_list = [i for i in range(im_dir.dir_len-1,-1,-1)]
+    im_list = [i for i in range(0,im_dir.dir_len)]
     count = 0 
     # start from low end of directory and go to top. 
     for gen in im_dir.open_dir(im_list):

@@ -62,6 +62,7 @@ class DataMang:
             'end'
             tmp_root = root
         'end'
+        tmp_files = sorted(tmp_files)
         for count in im_list:
             f = tmp_files[count]
             im = self._load_image(os.path.join(tmp_root,f))

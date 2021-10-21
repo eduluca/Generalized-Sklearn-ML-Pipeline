@@ -12,6 +12,7 @@ import numpy as np
 # initialize the list of reference points and boolean indicating
 # whether cropping is being performed or not
 import DataManager
+import Filters
 import sys
 
 refPt = []
@@ -133,6 +134,8 @@ class PanZoomWindow(object):
         cv2.namedWindow(self.WINDOW_NAME, cv2.WINDOW_NORMAL)
         self.redrawImage()
         cv2.setMouseCallback(self.WINDOW_NAME, self.onMouse)
+        # cv2.createTrackbar('Brightness', self.WINDOW_NAME, 255, 2*255, self.BrightnessContrast)
+        # cv2.createTrackbar('Contrast', self.WINDOW_NAME, 127, 2*127, self.BrightnessContrast)
         cv2.createTrackbar(self.H_TRACKBAR_NAME, self.WINDOW_NAME, 0, self.TRACKBAR_TICKS, self.onHTrackbarMove)
         cv2.createTrackbar(self.V_TRACKBAR_NAME, self.WINDOW_NAME, 0, self.TRACKBAR_TICKS, self.onVTrackbarMove)
     def onMouse(self, event, xc, yc, _Ignore1, _Ignore2):
@@ -170,8 +173,8 @@ class PanZoomWindow(object):
                 #initiate new line
                 self.poly_counter += 1
                 self.a, self.b = xc, yc
-                print('LBD: ',str(tracing))
-                print("appending point: ", coordsInDisplayedImage.astype(int))
+                # print('LBD: ',str(tracing))
+                # print("appending point: ", coordsInDisplayedImage.astype(int))
                 coordsInFullImage = self.panAndZoomState.ul + coordsInDisplayedImage
                 if self.tool_feature == "l":
                     self.points[self.poly_counter].append(self.incMode)
@@ -201,7 +204,7 @@ class PanZoomWindow(object):
             'end if'
         elif event == cv2.EVENT_LBUTTONUP:
             tracing = False
-            print('LBU: ',str(tracing))
+            # print('LBU: ',str(tracing))
             coordsInDisplayedImage = np.array([xc,yc])
             coordsInFullImage = self.panAndZoomState.ul+coordsInDisplayedImage
             pzs = self.panAndZoomState
@@ -323,6 +326,59 @@ class PanZoomWindow(object):
     def predict_rest(self,save=True):
         pass
     'end def'
+    # def controller(self, brightness=255, contrast=127):
+    #     brightness = int((brightness - 0) * (255 - (-255)) / (510 - 0) + (-255))
+    #     contrast = int((contrast - 0) * (127 - (-127)) / (254 - 0) + (-127))
+    #     if brightness != 0:
+    #         if brightness > 0:
+    #             shadow = brightness
+    #             max = 255
+    #         else:
+    #             shadow = 0
+    #             max = 255 + brightness
+    #         al_pha = (max - shadow) / 255
+    #         ga_mma = shadow
+    #         # The function addWeighted 
+    #         # calculates the weighted sum 
+    #         # of two arrays
+    #         cal = cv2.addWeighted(self.img, al_pha,
+    #                             self.img, 0, ga_mma)
+    #     else:
+    #         cal = self.img.copy()
+    #     if contrast != 0:
+    #         Alpha = float(131 * (contrast + 127)) / (127 * (131 - contrast))
+    #         Gamma = 127 * (1 - Alpha)
+    #         # The function addWeighted calculates
+    #         # the weighted sum of two arrays
+    #         cal = cv2.addWeighted(cal, Alpha,
+    #                             cal, 0, Gamma)
+    #     # putText renders the specified
+    #     # text string in the image.
+    #     cv2.putText(cal, 'B:{},C:{}'.format(brightness, 
+    #                                         contrast), 
+    #                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+    #                 1, (0, 0, 255), 2)
+    #     return cal
+    # 'end def'
+
+    # def BrightnessContrast(self, brightness=0):
+        
+    #     # getTrackbarPos returns the current
+    #     # position of the specified trackbar.
+    #     brightness = cv2.getTrackbarPos('Brightness',
+    #                                     self.WINDOW_NAME)
+        
+    #     contrast = cv2.getTrackbarPos('Contrast',
+    #                                 self.WINDOW_NAME)
+    
+    #     effect = self.controller(brightness, 
+    #                         contrast)
+    
+    #     # The function imshow displays an image
+    #     # in the specified window
+    #     cv2.imshow(self.WINDOW_NAME, effect)
+    # 'end def'
+
 'end class'
 
 def import_train_data(im_name,imshape,filename):
@@ -375,13 +431,14 @@ if __name__ == "__main__":
     for gen in im_dir.open_dir(im_list):
         image,nW,nH,chan,name = gen
         print("loading %s..."%(name))
+        # tmp_image = Filters.normalize_img(image)
+        #increase the red contrast
         wind = main(image,im_list[count],name)
-        bool_im = import_train_data(name,(nW,nH),'trained-bin')
+        bool_im = import_train_data(name,(nH,nW),'trained-bin')
         plt.imshow(bool_im)
         plt.show()
         count += 1
     'end for'
-    
 "end if"
 #6/29/2020: fillPoly() works, storage works, reconstruction works, just could use some user friendliness
 #10/11/2021: WE BACK BB, fixed some menu functionality and added comments. Specifically added infinite redaction of lines and improved menu responsiveness.

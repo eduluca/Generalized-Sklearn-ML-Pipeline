@@ -46,7 +46,7 @@ class DataMang:
 
         Yields
         ------
-        im : TYPE
+        im : image in directory
             DESCRIPTION.
         nW : TYPE
             DESCRIPTION.
@@ -67,8 +67,13 @@ class DataMang:
             f = tmp_files[count]
             im = self._load_image(os.path.join(tmp_root,f))
             name = [x for x in map(str.strip, f.split('.')) if x]
-            nW,nH,chan = im.shape
-            yield (im,nW,nH,chan,name)
+            # addition to handle naming convention provided by Yasin (Note: no spaces in names prefered -_-)
+            if len(name)>2:
+                n_out = '.'.join(name[:2])
+            else:
+                n_out = '.'.join(name[:1])
+            nH,nW,chan = im.shape
+            yield (im,nW,nH,chan,n_out)
         'end for'
     'end def'
 'end class'

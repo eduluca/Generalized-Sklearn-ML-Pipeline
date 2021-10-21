@@ -44,7 +44,16 @@ def match(feats, ref_feats):
     return min_i
 
 def normalize_img(image):
-    im_new = np.sqrt((image-np.nanmean(image))**2)/np.nanstd(image)
+    im_new = cv2.normalize(image, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    # im_new = np.sqrt((image-np.nanmean(image))**2)/np.nanstd(image)
+    # try:
+    #     im_new = np.zeros((image.shape[0],image.shape[1],image.shape[2]))
+    #     for i in range(image.shape[2]):
+    #         im_new[:,:,i] = np.sqrt((image[:,:,i]-np.nanmean(image[:,:,i]))**2)/np.nanstd(image[:,:,i])
+    # except IndexError:
+    #     im_new = np.zeros((image.shape[0],image.shape[1],3))
+    #     im_new[:,:,2] = np.sqrt((image[:,:]-np.nanmean(image[:,:]))**2)/np.nanstd(image[:,:])
+
     return im_new
 
 

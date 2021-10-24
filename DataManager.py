@@ -18,24 +18,15 @@ class DataMang:
         self.dir_len = len([name for name in os.listdir(directory) if os.path.isfile(os.path.join(directory,name))])
     'end def'
     
-    def save_obj(self,obj):
-        with open('mat.pkl', 'wb') as outfile:
-            pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
-        'end with'
-    'end def'
-    
-    def load_obj(self):
-        with open('mat.pkl', 'rb') as infile:
-            result = pickle.load(self.directoryinfile)
-        'end with'
-        return result
-    'end def'
-    
     def _load_image(self,rootdir):
         im = np.array(cv2.imread(rootdir)[:,:,:]/255).astype(np.float32)
         return im
-    
-    def open_dir(self,im_list):
+
+    def _load_image_train(self,rootdir):
+        im = cv2.imread(rootdir)[:,:,:]
+        return im
+
+    def open_dir(self,im_list,step):
         """
         This is a chunky directory manager. 
 
@@ -65,7 +56,11 @@ class DataMang:
         tmp_files = sorted(tmp_files)
         for count in im_list:
             f = tmp_files[count]
-            im = self._load_image(os.path.join(tmp_root,f))
+            if step == 'train':
+                im = self._load_image_train(os.path.join(tmp_root,f))
+            elif step == 'test':
+                im = self._load_image(os.path.join(tmp_root,f))
+            'end if'
             name = [x for x in map(str.strip, f.split('.')) if x]
             # addition to handle naming convention provided by Yasin (Note: no spaces in names prefered -_-)
             if len(name)>2:
@@ -77,3 +72,17 @@ class DataMang:
         'end for'
     'end def'
 'end class'
+
+def save_obj(rootPath, obj):
+    # include .pkl for rootPath
+    with open(rootPath, 'wb') as outfile:
+        pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
+    'end with'
+'end def'
+
+def load_obj(rootPath):
+    with open(rootPath, 'rb') as infile:
+        result = pickle.load(infile)
+    'end with'
+    return result
+'end def'

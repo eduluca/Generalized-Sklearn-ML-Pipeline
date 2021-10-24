@@ -27,9 +27,9 @@ from sklearn.decomposition import PCA
 from skimage.feature import hog
 from sklearn.neighbors import KNeighborsClassifier
 
-import SVM
+import ProcessPipe
 import Filters
-import ML_interface_SVM_V3
+import TrainGUI
 import DataManager
 
 dirname = os.path.dirname(__file__)
@@ -72,12 +72,12 @@ for gen in im_dir.open_dir(im_list):
     #the notation RGB (0,1,2 respectively))
     image = image[:,:,channel]
     #Import train data (if training your model)
-    train_bool = ML_interface_SVM_V3.import_train_data(name,(nW,nH),'train_71420')
+    train_bool = TrainGUI.import_train_data(name,(nW,nH),'train_71420')
     #extract features from image using method(SVM.filter_pipeline) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    im_segs, bool_segs, domains, paded_im_seg, paded_bool_seg, hog_features = SVM.feature_extract(image, ff_width, wiener_size, med_size,True,train_bool)
+    im_segs, bool_segs, domains, paded_im_seg, paded_bool_seg, hog_features = ProcessPipe.feature_extract(image, ff_width, wiener_size, med_size,True,train_bool)
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    X,y = SVM.create_data(hog_features,True,bool_segs)
+    X,y = ProcessPipe.create_data(hog_features,True,bool_segs)
     break
 
 print('done')
@@ -162,7 +162,7 @@ Test_im = np.array(cv2.imread("images_5HT/injured 60s_sectioned_CH2.tif")[:,:,2]
 predictions = fitted.predict(X_test)   
 
 # predict_im = data_to_img(boolim2_2,predictfions)
-SVM.overlay_predictions(image, train_bool, predictions, y_test, ind_test,domains)
+ProcessPipe.overlay_predictions(image, train_bool, predictions, y_test, ind_test,domains)
 
 ### Confusion Matrix: Save fig if interesting ###
 confmat = confusion_matrix(y_true = y_test, y_pred=predictions)
@@ -182,7 +182,7 @@ plt.show()
 ### ROC Curve ###
 fpr, tpr,_ = roc_curve(y_test, y_score[:,1])
 roc_auc = auc(fpr, tpr)
-SVM.write_auc(fpr,tpr)
+ProcessPipe.write_auc(fpr,tpr)
 #fpr,tpr,roc_auc = SVM.read_auc()
 
 

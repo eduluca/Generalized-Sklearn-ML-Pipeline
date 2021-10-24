@@ -472,21 +472,21 @@ if __name__ == "__main__":
     foldername = os.path.join(dirname,"images-5HT")
     # dealing with the Channel situation: display RGB but edit gray scale
     im_dir = DataManager.DataMang(foldername)
-    im_list = [i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)] #[i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)]
-    count = 0 
-    # start from low end of directory and go to top. 
-    for gen in im_dir.open_dir(im_list,'train'):
-        ansload = input("Would you like to load a previous image? [Y/N] ")
-        if ansload == 'y':
-            filename = input('load: [Input Name] ')
-            loadf = os.path.join(dirname,'trained-bin',filename+'.pkl')
-            wobj = DataManager.load_obj(loadf)
-            wobj.init_wind()
-            num = wobj.IMG_NUM
-            name = wobj.IMG_NAME
-            print("loading %s...."%(name))
-            wind = main(wobj)
-        else:
+    count = 0
+    ansload = input("Would you like to load a previous image? [Y/N] ")
+    if ansload == 'y':
+        filename = input('load: [Input Name] ')
+        loadf = os.path.join(dirname,'trained-bin',filename+'.pkl')
+        wobj = DataManager.load_obj(loadf)
+        wobj.init_wind()
+        num = wobj.IMG_NUM
+        name = wobj.IMG_NAME
+        print("loading %s...."%(name))
+        wind = main(wobj)
+    else:
+        ansload = input("What image number would you like to start from?: [int = 0 to %i] "%im_dir.dir_len)
+        im_list = [i for i in range(ansload,im_dir.dir_len)] #[i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)] #[i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)]
+        for gen in im_dir.open_dir(im_list,'train'):
             image,nW,nH,chan,name = gen
             wobj = PanZoomWindow(2,image,name,im_list[count],windowName = name)
             print("loading %s..."%(name))

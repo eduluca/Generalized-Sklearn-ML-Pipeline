@@ -16,8 +16,16 @@ class DataMang:
         # dir_n = os.path.join(os.path.dirname(__file__),dirname)
         self.directory = directory
         self.dir_len = len([name for name in os.listdir(directory) if os.path.isfile(os.path.join(directory,name))])
+        self.files = []
+        self.root = ""
+        self._get_DirInf()
     'end def'
     
+    def _get_ImageRootDir(im_name):
+        pass
+        # get image directory based on image name
+        return 0
+
     def _load_image(self,rootdir):
         im = np.array(cv2.imread(rootdir)[:,:,:]/255).astype(np.float32)
         return im
@@ -25,6 +33,19 @@ class DataMang:
     def _load_image_train(self,rootdir):
         im = cv2.imread(rootdir)[:,:,:]
         return im
+    
+    def _get_DirInf(self):
+        tmp_root = str()
+        tmp_files = []
+        for root,_,files in os.walk(self.directory):
+            for f in files:
+                tmp_files.append(f)
+            'end'
+            tmp_root = root
+        'end'
+        self.files = sorted(tmp_files)
+        self.root = tmp_root
+        return 0
 
     def open_dir(self,im_list,step):
         """
@@ -45,21 +66,12 @@ class DataMang:
             DESCRIPTION.
 
         """
-        tmp_root = str()
-        tmp_files = []
-        for root,_,files in os.walk(self.directory):
-            for f in files:
-                tmp_files.append(f)
-            'end'
-            tmp_root = root
-        'end'
-        tmp_files = sorted(tmp_files)
         for count in im_list:
-            f = tmp_files[count]
+            f = self.files[count]
             if step == 'train':
-                im = self._load_image_train(os.path.join(tmp_root,f))
+                im = self._load_image_train(os.path.join(self.root,f))
             elif step == 'test':
-                im = self._load_image(os.path.join(tmp_root,f))
+                im = self._load_image(os.path.join(self.root,f))
             'end if'
             name = [x for x in map(str.strip, f.split('.')) if x]
             # addition to handle naming convention provided by Yasin (Note: no spaces in names prefered -_-)
@@ -72,6 +84,13 @@ class DataMang:
         'end for'
     'end def'
 'end class'
+
+def yasin_DataHandler(imageName):
+    tmpS1 = imageName.split('.')
+    tmpS2 = tmpS1[1].split('_')
+    tmpJ1 = '_'.join(tmpS2[:-1])
+    name = '.'.join([tmpS1[0],tmpJ1])
+    return name
 
 def save_obj(rootPath, obj):
     # include .pkl for rootPath

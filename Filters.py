@@ -439,7 +439,7 @@ def countless(data):
 
 if __name__=="__main__":
     dirname = os.path.dirname(__file__)
-    image = np.array(cv2.imread(os.path.join(dirname,"images-5HT/dAIH_20x_sectioning_2_CH2.tif"))[:,:,2]/255).astype(np.float32)
+    image = np.array(cv2.imread(os.path.join(dirname,"images-5HT/C2Hx 2.2 773951-82_Section1_IL_20x_Overlay.tif"))[:,:,2]/255).astype(np.float32)
     kernels = gabor_filter(image,(0.05,0.25),8,(0,4))
     normalized = normalize_img(image)
     jj = wiener_filter(normalized)
@@ -449,8 +449,8 @@ if __name__=="__main__":
     # out = countless(np.uint8(image*255))
     # plt.figure('old');plt.imshow(image)
     # plt.figure('new');plt.imshow(out)
-    plt.figure('1');plt.imshow(filtfilt)
-    plt.figure('2');plt.imshow(filt_cont)
-    plt.figure('3');plt.imshow(normalized)
-    plt.figure('4');plt.imshow(threshed)
+    plt.figure('median filter');plt.imshow(filtfilt)
+    plt.figure('normalized image MINUS median image');plt.imshow(filt_cont)
+    plt.figure('normalized image');plt.imshow(normalized)
+    plt.figure('thresheld image');plt.imshow(threshed)
     plt.show()

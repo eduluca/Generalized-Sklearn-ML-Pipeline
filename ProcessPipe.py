@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # from sklearn import svm, datasets
 from skimage.feature import peak_local_max
-from skimage.morphology import watershed
+from skimage.segmentation import watershed
 from scipy.ndimage import convolve,distance_transform_edt,label, find_objects
 from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score, train_test_split, learning_curve, GridSearchCV
@@ -29,14 +29,14 @@ import csv
 
 import Filters
 import DataManager
-import Train_GUI
+import TrainGUI
 
 # import xlwings as xw
 
 from IPython import get_ipython
-plt.rcParams['figure.dpi'] = 100
-plt.rcParams['figure.figsize'] = (10,10)
-get_ipython().run_line_magic('matplotlib','qt5')
+# plt.rcParams['figure.dpi'] = 100
+# plt.rcParams['figure.figsize'] = (10,10)
+# get_ipython().run_line_magic('matplotlib','qt5')
 
 dirname = os.path.dirname(__file__)
 save_bin = os.path.join(dirname,"save-bin")
@@ -257,8 +257,6 @@ def get_nonzeros(image,val_vector,mask,tru_type = True):
 
 def filter_pipeline(image,ff_width,wiener_size,med_size,multiplier_a=1,multiplier_d=1):
     """
-    
-
     Parameters
     ----------
     image : TYPE
@@ -328,6 +326,7 @@ def im_watershed(image,train = True, boolim = np.array([]),a=3,d=2):
     segments image using a watersheding method with distance_transform_edt as the 
     descriminator. Returns list of segments
     """
+    MIN_DISTANCE = 20
     im_list = []
     bool_list = []
 
@@ -335,11 +334,13 @@ def im_watershed(image,train = True, boolim = np.array([]),a=3,d=2):
     mn = np.mean(gau_im)
     segments = gau_im > mn
     D = distance_transform_edt(segments)
-    localMax = peak_local_max(D, indices=False, min_distance=20,
+    tmplocalMax = peak_local_max(D, min_distance=MIN_DISTANCE,
                               labels=segments)
+    localMax = np.zeros_like(image, dtype=bool)
+    localMax[tuple(tmplocalMax.T)] = True
     markers = label(localMax,structure=np.ones((3,3)))[0]
     water_im = watershed(-D,markers,mask=segments)
-    f = find_objects(water_im)    
+    f = find_objects(water_im)  
     for seg in f:
         im_list.append(image[seg])
         if train:
@@ -402,13 +403,14 @@ def create_data(X,train=True,y = []):
             X_in.append(X[i].ravel())
         except AttributeError:
             X_in = get_hogs(X)
-            break            
+                     
     X_train = np.vstack(X_in)
     
     if train:
         for i in y:
-            y_train.append(True in i)
-        y_train = np.array(y_train).astype(int)
+            tmp = (True in i)
+            y_train.append(tmp)
+        y_train = np.vstack(y_train).astype(int)
         return X_train, y_train
     
     return X_train
@@ -505,9 +507,10 @@ def random_ind(a,b,N):
     return ints
 
 ### Testing ###
-"""
+
 if __name__ == '__main__':
-    
+    import ProcessPipe
+
     ### PARAMS ###
     channel = 2
     ff_width = 121
@@ -520,22 +523,49 @@ if __name__ == '__main__':
     dirn = dirname
     foldern = os.path.join(dirn,foldername)
     im_dir = DataManager.DataMang(foldern)
-    im_list = [i for i in range(0,im_dir.dir_len)]
-    hog_features = []
-    for gen in im_dir.open_dir(im_list):
+    im_list = [3,4,5,6,9,10,11,12,13,14,16,17,26,35] #[i for i in range(0,im_dir.dir_len)]
+
+    #define variables for loops
+    hog_features = [np.array([])]
+    im_segs = [np.array([])]
+    bool_segs = [np.array([])]
+    domains = [np.array([])]
+    paded_im_seg = [np.array([])]
+    X = []
+    y = []
+    print('Starting PreProcessing Pipeline...')
+
+    ## change what channel is being imported on the main image.
+
+    for gen in im_dir.open_dir(im_list,'test'):
         #load image and its information
+        t_start = time.time()
         image,nW,nH,chan,name = gen
+        print('   '+'Procesing Image : {}'.format(name))
         #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
-        #the notation RGB (0,1,2 respectively))
+        #the notation RGB (0,1,2 respectively))=
         image = image[:,:,channel]
         #Import train data (if training your model)
-        train_bool = ML_interface_SVM_V3.import_train_data(name,(nW,nH),'train_71420')
+        train_bool = TrainGUI.import_train_data(name,(nH,nW),'archive-image-bin\\trained-bin-EL-11122021\\')
+        plt.figure('image')
+        plt.imshow(image)
         #extract features from image using method(SVM.filter_pipeline) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
         #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-        im_segs, bool_segs, domains, paded_im_seg, paded_bool_seg, hog_features = feature_extract(image, ff_width, wiener_size, med_size,True,train_bool)
-        #im_segs, _, domains, paded_im_seg, _, hog_features = feature_extract(image, ff_width, wiener_size, med_size,False)
-        #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-        X_train,y_train = create_data(im_segs,bool_segs,True)
-        #X_train,y_train = create_data(im_segs,True)
+        im_segs, bool_segs, domains, paded_im_seg, paded_bool_seg, hog_features = ProcessPipe.feature_extract(image, ff_width, wiener_size, med_size,True,train_bool)
 
-"""
+        #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
+        tmp_X,tmp_y = ProcessPipe.create_data(hog_features,True,bool_segs)
+        X.append(tmp_X)
+        y.append(tmp_y)
+        t_end = time.time()
+        print('     '+'Number of Segments : %i'%(len(im_segs)))
+        print('     '+"Processing Time for %s : %0.2f"%(name,(t_end-t_start)))
+        break
+    print('done')
+
+    plt.figure('Image');plt.imshow(image)
+    plt.figure('Bool Image');plt.imshow(train_bool)
+    # plt.figure('normalized image');plt.imshow(normalized)
+    # plt.figure('thresheld image');plt.imshow(threshed)
+    plt.show()
+

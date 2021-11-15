@@ -2,8 +2,12 @@
 """
 Created on Wed Jan 13 19:02:19 2021
 
-@author: jsalm
+@author: Jacob Salminen
+@version: 1.0.20
 """
+import time
+import multiprocessing as mp
+print("Number of processors: ", mp.cpu_count())
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -89,27 +93,53 @@ dirname = os.path.dirname(__file__)
 foldername = os.path.join(dirname,"images-5HT")
 im_dir = DataManager.DataMang(foldername)
 # change the 'start' in PARAMS to choose which file you want to start with.
-im_list = [i for i in range(start,im_dir.dir_len)]
-hog_features = []
-for gen in im_dir.open_dir(im_list):
+im_list = [4,5,6,9,10,11,12,13,14,16,17,25,35] #[i for i in range(start,im_dir.dir_len)] 
+# im_list NOTES: removed 3 (temporary), 
+im_list_test = [1]
+
+#define variables for loops
+hog_features = [np.array([])]
+im_segs = [np.array([])]
+bool_segs = [np.array([])]
+domains = [np.array([])]
+paded_im_seg = [np.array([])]
+X = []
+y = []
+print('Starting PreProcessing Pipeline...')
+
+## change what channel is being imported on the main image.
+
+for gen in im_dir.open_dir(im_list,'test'):
     #load image and its information
+    t_start = time.time()
     image,nW,nH,chan,name = gen
-    print('procesing image : {}'.format(name))
+    print('   '+'Procesing Image : {}'.format(name))
     #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
-    #the notation RGB (0,1,2 respectively))
+    #the notation RGB (0,1,2 respectively))=
     image = image[:,:,channel]
     #Import train data (if training your model)
-    train_bool = TrainGUI.import_train_data(name,(nW,nH),'train-71420')
+    train_bool = TrainGUI.import_train_data(name,(nH,nW),'archive-image-bin\\trained-bin-EL-11122021\\')
+    plt.figure('image')
+    plt.imshow(image)
     #extract features from image using method(SVM.filter_pipeline) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
     im_segs, bool_segs, domains, paded_im_seg, paded_bool_seg, hog_features = ProcessPipe.feature_extract(image, ff_width, wiener_size, med_size,True,train_bool)
+
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    X,y = ProcessPipe.create_data(hog_features,True,bool_segs)
-    break
+    tmp_X,tmp_y = ProcessPipe.create_data(hog_features,True,bool_segs)
+    X.append(tmp_X)
+    y.append(tmp_y)
+    t_end = time.time()
+    print('     '+'Number of Segments : %i'%(len(im_segs)))
+    print('     '+"Processing Time for %s : %0.2f"%(name,(t_end-t_start)))
 
 print('done')
+#stack X and y
+X = np.vstack(X)
+y = np.vstack(y)
 #adding in some refence numbers for later
-y = np.vstack([y,np.arange(0,len(y),1)]).T
+idx = np.array([[i for i in range(0,len(y))]]).T
+y = np.hstack((y,idx))
 #split dataset
 
 print('Splitting dataset...')
@@ -124,10 +154,10 @@ y_train = y_train[:,0]
 y_test = y_test[:,0]
 
 
-print("Training Data (N): " + str(len(y_train)))
-print("Testing Data (N): " + str(len(y_test)))
-print("y_train: " + str(np.unique(y_train)))
-print("y_test: " + str(np.unique(y_test)))
+print('   '+"Training Data (N): " + str(len(y_train)))
+print('     '+"Testing Data (N): " + str(len(y_test)))
+print('     '+"y_train: " + str(np.unique(y_train)))
+print('     '+"y_test: " + str(np.unique(y_test)))
 
 
 
@@ -172,7 +202,7 @@ scores = cross_val_score(estimator = pipe_svc,
                           y = y_train,
                           cv = 10,
                           scoring = 'roc_auc',
-                          verbose = True,
+                          verbose = 5,
                           n_jobs=-1)
 
 print('CV accuracy scores: %s' % scores)
@@ -186,7 +216,9 @@ print(pipe_svc.score(X_test,y_test))
 ### DATA PROCESSING IMAGE 2 ###
 #pick a test image
 # os.chdir(r'C:\Users\jsalm\Documents\Python Scripts\SVM_7232020')
-Test_im = np.array(cv2.imread("images_5HT/injured 60s_sectioned_CH2.tif")[:,:,2]/255).astype(np.float32)
+for gen in im_dir.open_dir(im_list_test,'test'):
+    image,nW,nH,chan,name = gen
+    Test_im = image
 
 #extract features
 # im_segs_test, _, domains_test, paded_im_seg_test, _, hog_features_test = SVM.feature_extract(Test_im, ff_width, wiener_size, med_size,False)

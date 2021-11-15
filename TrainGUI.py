@@ -466,6 +466,8 @@ def main(window):
     return window
 'end def'
 
+#%% Main GUI
+"""
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     dirname = os.path.dirname(__file__)
@@ -485,7 +487,7 @@ if __name__ == "__main__":
         wind = main(wobj)
     else:
         ansload = input("What image number would you like to start from?: [int = 0 to %i] "%im_dir.dir_len)
-        im_list = [i for i in range(ansload,im_dir.dir_len)] #[i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)] #[i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)]
+        im_list = [i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)] #[i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)]
         for gen in im_dir.open_dir(im_list,'train'):
             image,nW,nH,chan,name = gen
             wobj = PanZoomWindow(2,image,name,im_list[count],windowName = name)
@@ -497,7 +499,48 @@ if __name__ == "__main__":
         plt.imshow(bool_im)
         plt.show()
         count += 1
-    'end for'
-"end if"
+        'end for'
+    "end if"
+'end if'
+"""
+#%% Check Train Data
+if __name__ == "__main__":
+    #%% cell 1
+    print('Running ''Check Train Data''...')
+    import time
+    import os
+    import matplotlib.pyplot as plt
+    import TrainGUI
+    import DataManager
+    ### PARAMS ###
+    channel = 2
+    ff_width = 121
+    wiener_size = (5,5)
+    med_size = 10
+    start = 0
+    count = 42
+    ###
+
+    dirname = os.path.dirname(__file__)
+    foldername = os.path.join(dirname,"archive-image-bin\\trained-bin-EL-11122021\\")
+    im_dir = DataManager.DataMang(foldername)
+    im_list = [i for i in range(start,im_dir.dir_len)]
+    print('INFO: Directory contains %i files'%(im_dir.dir_len))
+    for gen in im_dir.files:
+        #load image and its information
+        t_start = time.time()
+        name = DataManager.yasin_DataHandler(gen)
+        print('   '+'Procesing Image : {}'.format(name))
+        #Import train data (if training your model)
+        nH = 1440
+        nW = 1920
+        train_bool = TrainGUI.import_train_data(name,(nH,nW),'archive-image-bin\\trained-bin-EL-11122021\\')
+        # plt.figure('Image'); plt.imshow(image); plt.show()
+        plt.figure('Training Image');plt.imshow(train_bool); plt.show()
+        plt.waitforbuttonpress()
+        t_end = time.time()
+    print('done')
+'end if'
+# VERSION HISTORY
 #6/29/2020: fillPoly() works, storage works, reconstruction works, just could use some user friendliness
 #10/11/2021: WE BACK BB, fixed some menu functionality and added comments. Specifically added infinite redaction of lines and improved menu responsiveness.

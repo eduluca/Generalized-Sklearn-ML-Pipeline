@@ -356,6 +356,7 @@ def pad_segs(im_list,bool_list,f,train = True,fill_val = 0):
     fill_val = 0 : TYPE, integer or function (e.g. np.nan)
         DESCRIPTION. 
     """
+    # get dimensions of larges segment to determine how much padding needs to be added to other images.
     yval = []
     xval = []
     count = 0
@@ -497,6 +498,38 @@ def read_auc():
     tpr = np.array(tpr)
     roc_auc = auc(fpr, tpr)
     return fpr,tpr,roc_auc
+
+def padAll(X,y,fill_val = 0):
+    """
+    im_list
+    train : boolean
+        DESCRIPTION : if train == True set bool_list = np.array()
+    f
+    fill_val = 0 : TYPE, integer or function (e.g. np.nan)
+        DESCRIPTION. 
+    """
+    # get dimensions of larges segment to determine how much padding needs to be added to other images.
+    yval = []
+    xval = []
+    count = 0
+    for im in X:
+        for seg in im:
+            yval.append(abs(seg[0]-seg[0]))
+            xval.append(abs(seg[1]-seg[1]))
+        'end for'
+    'end for'
+    maxy = np.max(yval)
+    maxx = np.max(xval)
+    
+    for seg in f:
+        dify = maxy - abs(seg[0].stop-seg[0].start) 
+        difx = maxx - abs(seg[1].stop-seg[1].start)
+        if dify != 0 or difx != 0:
+            im_list[count] = np.pad(im_list[count],((0,dify),(0,difx)),'constant',constant_values=fill_val)
+            if train:
+                bool_list[count] = np.pad(bool_list[count],((0,dify),(0,difx)),'constant',constant_values=fill_val)
+        count += 1
+    return im_list, bool_list, f
 
 import random
 

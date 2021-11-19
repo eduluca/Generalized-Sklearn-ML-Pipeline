@@ -47,6 +47,9 @@ class DataMang:
         self.root = tmp_root
         return 0
 
+    # def compareDir(self,otherDir):
+    #     for f in self.files:
+
     def open_dir(self,im_list,step):
         """
         This is a chunky directory manager. 
@@ -80,7 +83,7 @@ class DataMang:
             else:
                 n_out = '.'.join(name[:1])
             nH,nW,chan = im.shape
-            yield (im,nW,nH,chan,n_out)
+            yield (im,nW,nH,chan,n_out,count)
         'end for'
     'end def'
 'end class'

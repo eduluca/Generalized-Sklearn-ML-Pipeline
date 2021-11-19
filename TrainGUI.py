@@ -401,7 +401,7 @@ class PanZoomWindow(object):
     'end def'
 'end class'
 
-def import_train_data(im_name,imshape,foldername):
+def import_train_data(im_name,imshape,folderDir):
     """
     Parameters
     ----------
@@ -418,7 +418,7 @@ def import_train_data(im_name,imshape,foldername):
         binary/integer image of true false labelings for training data
 
     """
-    filedir = os.path.join(os.path.dirname(__file__),foldername,im_name+"_traind.bin")
+    filedir = os.path.join(folderDir,im_name+"_traind.bin")
     bitimage = np.fromfile(filedir,dtype='int16')
     bitimage = bitimage.reshape(imshape)
     return bitimage

@@ -5,6 +5,7 @@ Created on Wed Jan 13 19:02:19 2021
 @author: Jacob Salminen
 @version: 1.0.20
 """
+#%% IMPORTS
 import time
 import multiprocessing as mp
 print("Number of processors: ", mp.cpu_count())
@@ -18,157 +19,78 @@ from scipy.ndimage import convolve
 from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score, train_test_split, learning_curve, GridSearchCV
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, LabelEncoder
+from sklearn.preprocessing import RobustScaler
 from sklearn.metrics import confusion_matrix, auc, roc_curve, roc_auc_score
-from sklearn.decomposition import PCA
-from skimage.feature import hog
-from sklearn.ensemble import GradientBoostingClassifier
 
 import ProcessPipe
-import Filters
-import TrainGUI
 import DataManager
 
-dirname = os.path.dirname(__file__)
-save_bin = os.path.join(dirname,"save_bin")
-
-def robust_save(fname):
-    plt.savefig(os.path.join(save_bin,'overlayed_predictions.png',dpi=200,bbox_inches='tight'))
-####PARAMS####
-# param_range = [0.0001,0.001,0.01,0.1,1,10,100,1000]
-# param_range= np.arange(0.01,1,0.001)
-param_range2_C = [40,50,60,70,80,90,100,110,120,130,140]
-param_range2_ga = [0.0005,0.0006,0.0007,0.001,0.002,0.003,0.004]
-deg_range = [2,3,4,5,6,7]
-deg_range2 = [2,3,4,5,6,10]
-poly_range = np.arange(2,10,1)
-poly_range_C = np.arange(1e-15,1e-7,6e-10)
-poly_range_ga = np.arange(1e8,1e15,6e12)
-# param_grid = [{'svc__C':param_range,
-#                 'svc__kernel':['linear']},
-#               {'svc__C': param_range,
-#                 'svc__gamma':param_range,
-#                 'svc__kernel':['rbf']},
-#               {'svc__C': param_range,
-#                 'svc__gamma':param_range,
-#                 'svc__kernel':['poly'],
-#                 'svc__degree':deg_range}]
-param_grid2 = [{'svc__C': param_range2_C,
-                'svc__gamma':param_range2_ga,
-                'svc__decision_function_shape':['ovo','ovr'],
-                'svc__kernel':['rbf']},
-                {'svc__C': param_range2_C,
-                  'svc__gamma':param_range2_ga,
-                  'svc__kernel':['poly'],
-                  'svc__decision_function_shape':['ovo','ovr'],
-                  'svc__degree':deg_range2}]
-# param_grid2 = [{'svc__C': param_range2_C,
-#                 'svc__gamma':param_range2_ga,
-#                 'svc__decision_function_shape':['ovo','ovr'],
-#                 'svc__kernel':['rbf']}]
-# param_grid3 = [{'svc__C': poly_range_C,
-#                 'svc__gamma':poly_range_ga,
-#                 'svc__kernel':['poly'],
-#                 'svc__degree':poly_range}]
-###END###
-
-### DATA PROCESSING IMAGE 1 ###
-
-#initialize test data set
-dirname = os.path.dirname(__file__)
-foldername = os.path.join(dirname,"images-5HT")
-im_dir = DataManager.DataMang(foldername)
-
-### PARAMS ###
-channel = 2
-ff_width = 121
-wiener_size = (5,5)
-med_size = 10
-start = 0
-count = 42
-###
-
-#load image folder for training data
-dirname = os.path.dirname(__file__)
-foldername = os.path.join(dirname,"images-5HT")
-im_dir = DataManager.DataMang(foldername)
-# change the 'start' in PARAMS to choose which file you want to start with.
-im_list = [4,5,6,9,10,11,12,13,14,16,17,25,35] #[i for i in range(start,im_dir.dir_len)] 
-# im_list NOTES: removed 3 (temporary), 
-im_list_test = [1]
-
-#define variables for loops
-hog_features = [np.array([])]
-im_segs = [np.array([])]
-bool_segs = [np.array([])]
-domains = [np.array([])]
-paded_im_seg = [np.array([])]
-X = []
-y = []
-print('Starting PreProcessing Pipeline...')
-
-## change what channel is being imported on the main image.
-
-for gen in im_dir.open_dir(im_list,'test'):
-    #load image and its information
-    t_start = time.time()
-    image,nW,nH,chan,name = gen
-    print('   '+'Procesing Image : {}'.format(name))
-    #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
-    #the notation RGB (0,1,2 respectively))=
-    image = image[:,:,channel]
-    #Import train data (if training your model)
-    train_bool = TrainGUI.import_train_data(name,(nH,nW),'archive-image-bin\\trained-bin-EL-11122021\\')
-    plt.figure('image')
-    plt.imshow(image)
-    #extract features from image using method(SVM.filter_pipeline) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
-    #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    im_segs, bool_segs, domains, paded_im_seg, paded_bool_seg, hog_features = ProcessPipe.feature_extract(image, ff_width, wiener_size, med_size,True,train_bool)
-
-    #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    tmp_X,tmp_y = ProcessPipe.create_data(hog_features,True,bool_segs)
-    X.append(tmp_X)
-    y.append(tmp_y)
-    t_end = time.time()
-    print('     '+'Number of Segments : %i'%(len(im_segs)))
-    print('     '+"Processing Time for %s : %0.2f"%(name,(t_end-t_start)))
-
-print('done')
+#%% PATHS 
+# Path to file
+cfpath = os.path.dirname(__file__) 
+# Path to images to be processed
+folderName = os.path.join(cfpath,"images-5HT")
+# Path to save bin : saves basic information
+saveBin = os.path.join(cfpath,"save_bin")
+# Path to training files
+trainDatDir = os.path.join(cfpath,'archive-image-bin\\trained-bin-EL-11122021\\')
+#%% Load Data
+tmpLoadDir = os.path.join(trainDatDir, 'joined_data.pkl')
+tmpDat = DataManager.load_obj(tmpLoadDir)
+X = tmpDat[0]
+y = tmpDat[1]
+#Typing for memory constraints
+X = np.float32(X)
+y = np.float16(y)
+#%% BASIC PADDING
+lenX = []
+padedX = []
+count = 0
+fill_val = 0
+for im in X:
+    for seg in im:
+        lenX.append(len(seg))
+    'end for'
+'end for'
+uVals = np.unique(lenX)
+uMax = np.max(uVals)
+for i in range(len(X)):
+    for j in range(len(X[i])):
+        nPad = uMax-len(X[i][j])
+        padedX.append(np.append(X[i][j],np.zeros(nPad)))
+    'end for'
+'end for'
+#%% Train-Test Split
 #stack X and y
-X = np.vstack(X)
+X = np.vstack(padedX)
 y = np.vstack(y)
 #adding in some refence numbers for later
 idx = np.array([[i for i in range(0,len(y))]]).T
 y = np.hstack((y,idx))
 #split dataset
-
 print('Splitting dataset...')
 X_train, X_test, y_train, y_test = train_test_split(X,y,
-                                                        test_size=0.2,
+                                                        test_size=0.3,
                                                         shuffle=True,
                                                         random_state=count)
 ind_train = y_train[:,1]
 ind_test = y_test[:,1]
-
 y_train = y_train[:,0]
 y_test = y_test[:,0]
-
-
+# Print train-test characteristics
 print('   '+"Training Data (N): " + str(len(y_train)))
 print('     '+"Testing Data (N): " + str(len(y_test)))
 print('     '+"y_train: " + str(np.unique(y_train)))
 print('     '+"y_test: " + str(np.unique(y_test)))
 
-
-
-#create SVM pipline
-#try using a GBC
+#%% Create SVM Pipeline
 pipe_svc = make_pipeline(RobustScaler(),SVC())
 
-#SVM MODEL FITTING
-#we create an instance of SVM and fit out data.
+#%% SVM MODEL FITTING
+# Create an instance of SVM and fit out data.
 print("starting modeling career...")
 
+#%% GRIDSEARCH (IF NECESSARY)
 # gs = GridSearchCV(estimator = pipe_svc,
 #                   param_grid = param_grid2,
 #                   scoring = 'roc_auc',
@@ -184,6 +106,7 @@ print("starting modeling career...")
 # pipe_svc = gs.best_estimator_
 ### END Gridsearch ####
 
+#%% PARAMETER SETTING (IF AVAILABLE)
 ### Setting Parameters ###
 print('fitting...')
 #{'svc__C': 100, 'svc__gamma': 0.001, 'svc__kernel': 'rbf'} (~0.72% f1_score)
@@ -196,7 +119,8 @@ pipe_svc.set_params(svc__C =  130,
                     svc__shrinking = False,
                     svc__decision_function_shape = 'ovr')
 
-### Cross Validate ###
+
+#%% CROSS VALIDATION
 scores = cross_val_score(estimator = pipe_svc,
                           X = X_train,
                           y = y_train,
@@ -208,12 +132,12 @@ scores = cross_val_score(estimator = pipe_svc,
 print('CV accuracy scores: %s' % scores)
 print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores))) 
 
-### Fitting Model ###
+#%% MODEL FITTING
 fitted = pipe_svc.fit(X_train,y_train)
 y_score = pipe_svc.fit(X_train,y_train).decision_function(X_test)
 print(pipe_svc.score(X_test,y_test))
 
-### DATA PROCESSING IMAGE 2 ###
+#%% MODEL TESTING
 #pick a test image
 # os.chdir(r'C:\Users\jsalm\Documents\Python Scripts\SVM_7232020')
 for gen in im_dir.open_dir(im_list_test,'test'):
@@ -242,7 +166,7 @@ plt.xlabel('Predicted label')
 plt.ylabel('True label')
 
 plt.tight_layout()
-plt.savefig(os.path.join(save_bin,'confussion-matrix.png'),dpi=200,bbox_inches='tight')
+plt.savefig(os.path.join(saveBin,'confussion-matrix.png'),dpi=200,bbox_inches='tight')
 plt.show()
 
 ### ROC Curve ###
@@ -265,7 +189,7 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver operating characteristic example')
 plt.legend(loc="lower right")
 plt.show()
-plt.savefig(os.path.join(save_bin,'roc_auc_curve.png'),dpi=200,bbox_inches='tight')
+plt.savefig(os.path.join(saveBin,'roc_auc_curve.png'),dpi=200,bbox_inches='tight')
 # #PLOT IMAGES
 # # Filters.imshow_overlay(Test_im,predict_im,'predictions2',True)
 

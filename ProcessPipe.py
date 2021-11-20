@@ -422,8 +422,6 @@ def gen_mask(image):
 
 def overlay_predictions(image,boolim,preds,y_test,ind_test,f,**kwargs):
     """
-    
-
     Parameters
     ----------
     image : np.array(float64)
@@ -499,7 +497,7 @@ def read_auc():
     roc_auc = auc(fpr, tpr)
     return fpr,tpr,roc_auc
 
-def padAll(X,y,fill_val = 0):
+def padPreProcessed(X):
     """
     im_list
     train : boolean
@@ -508,28 +506,23 @@ def padAll(X,y,fill_val = 0):
     fill_val = 0 : TYPE, integer or function (e.g. np.nan)
         DESCRIPTION. 
     """
-    # get dimensions of larges segment to determine how much padding needs to be added to other images.
-    yval = []
-    xval = []
-    count = 0
+    lenX = []
+    padedX = []
     for im in X:
         for seg in im:
-            yval.append(abs(seg[0]-seg[0]))
-            xval.append(abs(seg[1]-seg[1]))
+            lenX.append(len(seg))
         'end for'
     'end for'
-    maxy = np.max(yval)
-    maxx = np.max(xval)
-    
-    for seg in f:
-        dify = maxy - abs(seg[0].stop-seg[0].start) 
-        difx = maxx - abs(seg[1].stop-seg[1].start)
-        if dify != 0 or difx != 0:
-            im_list[count] = np.pad(im_list[count],((0,dify),(0,difx)),'constant',constant_values=fill_val)
-            if train:
-                bool_list[count] = np.pad(bool_list[count],((0,dify),(0,difx)),'constant',constant_values=fill_val)
-        count += 1
-    return im_list, bool_list, f
+    uVals = np.unique(lenX)
+    uMax = np.max(uVals)
+    for i in range(len(X)):
+        for j in range(len(X[i])):
+            nPad = uMax-len(X[i][j])
+            padedX.append(np.append(X[i][j],np.zeros(nPad)))
+        'end for'
+    'end for'
+    return padedX
+'end def'
 
 import random
 

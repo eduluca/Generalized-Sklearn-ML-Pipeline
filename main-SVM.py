@@ -12,7 +12,6 @@ print("Number of processors: ", mp.cpu_count())
 
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
 import os
 
 from scipy.ndimage import convolve
@@ -24,6 +23,7 @@ from sklearn.metrics import confusion_matrix, auc, roc_curve, roc_auc_score
 
 import ProcessPipe
 import DataManager
+import dill as pickle
 
 #%% PATHS 
 # Path to file
@@ -34,41 +34,35 @@ folderName = os.path.join(cfpath,"images-5HT")
 saveBin = os.path.join(cfpath,"save_bin")
 # Path to training files
 trainDatDir = os.path.join(cfpath,'archive-image-bin\\trained-bin-EL-11122021\\')
+#%% Script Params
+channel = 2
+ff_width = 121
+wiener_size = (5,5)
+med_size = 10
+start = 0
+count = 42
 #%% Load Data
+print('Loading Data...')
 tmpLoadDir = os.path.join(trainDatDir, 'joined_data.pkl')
 tmpDat = DataManager.load_obj(tmpLoadDir)
 X = tmpDat[0]
 y = tmpDat[1]
+del tmpDat
+#%% BASIC PADDING
+print('Padding Data...')
+X = ProcessPipe.padPreProcessed(X)
+#%% Train-Test Split
+print('Splitting Data...')
+#stack X and y
+X = np.vstack(X)
+y = np.vstack(y)
 #Typing for memory constraints
 X = np.float32(X)
 y = np.float16(y)
-#%% BASIC PADDING
-lenX = []
-padedX = []
-count = 0
-fill_val = 0
-for im in X:
-    for seg in im:
-        lenX.append(len(seg))
-    'end for'
-'end for'
-uVals = np.unique(lenX)
-uMax = np.max(uVals)
-for i in range(len(X)):
-    for j in range(len(X[i])):
-        nPad = uMax-len(X[i][j])
-        padedX.append(np.append(X[i][j],np.zeros(nPad)))
-    'end for'
-'end for'
-#%% Train-Test Split
-#stack X and y
-X = np.vstack(padedX)
-y = np.vstack(y)
 #adding in some refence numbers for later
 idx = np.array([[i for i in range(0,len(y))]]).T
 y = np.hstack((y,idx))
 #split dataset
-print('Splitting dataset...')
 X_train, X_test, y_train, y_test = train_test_split(X,y,
                                                         test_size=0.3,
                                                         shuffle=True,
@@ -121,38 +115,48 @@ pipe_svc.set_params(svc__C =  130,
 
 
 #%% CROSS VALIDATION
-scores = cross_val_score(estimator = pipe_svc,
-                          X = X_train,
-                          y = y_train,
-                          cv = 10,
-                          scoring = 'roc_auc',
-                          verbose = 5,
-                          n_jobs=-1)
+# scores = cross_val_score(estimator = pipe_svc,
+#                           X = X_train,
+#                           y = y_train,
+#                           cv = 10,
+#                           scoring = 'roc_auc',
+#                           verbose = 5,
+#                           n_jobs=-1)
 
-print('CV accuracy scores: %s' % scores)
-print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores))) 
+# print('CV accuracy scores: %s' % scores)
+# print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores))) 
 
 #%% MODEL FITTING
-fitted = pipe_svc.fit(X_train,y_train)
+pipe_svc.fit(X_train,y_train)
 y_score = pipe_svc.fit(X_train,y_train).decision_function(X_test)
 print(pipe_svc.score(X_test,y_test))
 
 #%% MODEL TESTING
 #pick a test image
-# os.chdir(r'C:\Users\jsalm\Documents\Python Scripts\SVM_7232020')
+im_list_test = [0]
+#image directory
+im_dir = DataManager.DataMang(folderName)
 for gen in im_dir.open_dir(im_list_test,'test'):
+    t_start = time.time()
     image,nW,nH,chan,name = gen
     Test_im = image
+    print('   '+'{}.) Procesing Image : {}'.format(count,name))
+    #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
+    #the notation RGB (0,1,2 respectively))=
+    image = image[:,:,channel]
+    #extract features from image using method(ProcessPipe.feature_extract) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
+    #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
+    im_segs, bool_segs, domains, paded_im_seg, paded_bool_seg, hog_features = ProcessPipe.feature_extract(image, ff_width, wiener_size, med_size,False)
+    #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
+    tmp_X = ProcessPipe.create_data(hog_features,False,bool_segs)
+    X.append(tmp_X)
+    t_end = time.time()
+    print('     '+'Number of Segments : %i'%(len(im_segs)))
+    print('     '+"Processing Time for %s : %0.2f"%(name,(t_end-t_start)))
+print('done')
 
-#extract features
-# im_segs_test, _, domains_test, paded_im_seg_test, _, hog_features_test = SVM.feature_extract(Test_im, ff_width, wiener_size, med_size,False)
-# X_test = SVM.create_data(im_segs_test,False)
-
-### SVM MODEL PREDICTION ###
+#%% SVM MODEL PREDICTION 
 predictions = fitted.predict(X_test)   
-
-# predict_im = data_to_img(boolim2_2,predictfions)
-ProcessPipe.overlay_predictions(image, train_bool, predictions, y_test, ind_test,domains)
 
 ### Confusion Matrix: Save fig if interesting ###
 confmat = confusion_matrix(y_true = y_test, y_pred=predictions)
@@ -164,7 +168,6 @@ for i in range(confmat.shape[0]):
 
 plt.xlabel('Predicted label')
 plt.ylabel('True label')
-
 plt.tight_layout()
 plt.savefig(os.path.join(saveBin,'confussion-matrix.png'),dpi=200,bbox_inches='tight')
 plt.show()
@@ -174,11 +177,8 @@ fpr, tpr,_ = roc_curve(y_test, y_score)
 roc_auc = auc(fpr, tpr)
 ProcessPipe.write_auc(fpr,tpr)
 #fpr,tpr,roc_auc = SVM.read_auc()
-
-
 plt.figure()
 lw = 2
-
 plt.plot(fpr, tpr, color='darkorange',
          lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
 plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
@@ -190,9 +190,6 @@ plt.title('Receiver operating characteristic example')
 plt.legend(loc="lower right")
 plt.show()
 plt.savefig(os.path.join(saveBin,'roc_auc_curve.png'),dpi=200,bbox_inches='tight')
-# #PLOT IMAGES
-# # Filters.imshow_overlay(Test_im,predict_im,'predictions2',True)
-
-# name_list = ["image","denoised_im","median_im","thresh_im","dir_im","gau_im","di_im","t_im"]
-# for i in range(0,len(image_tuple)):
-#     plt.figure(name_list[i]);plt.imshow(image_tuple[i])
+#%% PLOT IMAGES
+# predict_im = data_to_img(boolim2_2,predictfions)
+# ProcessPipe.overlay_predictions(image, train_bool, predictions, y_test, ind_test, domains)

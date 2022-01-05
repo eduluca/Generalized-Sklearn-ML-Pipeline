@@ -1,6 +1,7 @@
 **/env
 **/images-5HT
 **/archive-image-bin
-**/*.pkl
-**/*.bin
-**/*.sav
+*.pkl
+*.bin
+*.sav
+

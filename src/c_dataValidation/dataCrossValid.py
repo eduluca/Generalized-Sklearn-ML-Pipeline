@@ -37,7 +37,7 @@ wiener_size = (5,5)
 med_size = 10
 start = 0
 count = 42
-dTime = '12242021' #date.today().strftime('%d%m%Y')
+dTime = '10012022' #date.today().strftime('%d%m%Y')
 #%% Load Data
 print('Loading Data...')
 tmpLoadDir = join(aggDatDir, ('joined_data_'+dTime+'.pkl'))
@@ -54,8 +54,8 @@ print('Splitting Data...')
 X = np.vstack(X)
 y = np.vstack(y)
 #Typing for memory constraints
-X = np.float32(X)
-y = np.float16(y)
+X = np.float64(X)
+y = np.int16(y)
 #adding in some refence numbers for later
 idx = np.array([[i for i in range(0,len(y))]]).T
 y = np.hstack((y,idx))

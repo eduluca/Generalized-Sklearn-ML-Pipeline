@@ -9,8 +9,7 @@ Created on Wed Jan 13 19:02:19 2021
 import time
 from datetime import date
 import multiprocessing as mp
-from joblib import Parallel, delayed
-print("Number of processors: ", mp.cpu_count())
+# from joblib import Parallel, delayed
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,8 +20,8 @@ from a_dataGeneration import TrainGUI
 import localModules.DataManager as DataManager
 
 #%% Globals
-global dTime, cfpath, folderName, trainDatDir, saveBin, aggDatDir, im_dir, im_list
 dTime = date.today().strftime('%d%m%Y')
+results = []
 #%% PATHS 
 # Path to file
 cfpath = dirname(__file__) 
@@ -45,7 +44,13 @@ def robust_save(fname):
     plt.savefig(join(fname,'overlayed_predictions.png',dpi=200,bbox_inches='tight'))
 #enddef
 
+# Callback function to collec the output from parallel processing in 'result'
+def collect_result(result):
+    global results
+    results.append(result)
+
 def mainLoop(i):
+    global dTime, cfpath, folderName, trainDatDir, saveBin, aggDatDir, im_dir, im_list
     #%% PARAMS ###
     channel = 2
     ff_width = 121
@@ -84,39 +89,29 @@ def mainLoop(i):
 #enddef
 #%% LOOP: Image Parsing/Pre-Processing 
 if __name__ == '__main__':
+    print("Number of processors: ", mp.cpu_count())
     #%% Loop Start
     print('Starting PreProcessing Pipeline...')
     reduceFactor = 2
     ## change what channel is being imported on the main image.
     im_dir = DataManager.DataMang(folderName)
-    pool = mp.Pool(mp.cpu_count()-1)
-    result = Parallel(n_jobs=mp.cpu_count())(delayed(mainLoop)(i) for i in range(0,len(im_list)))
-    # for gen in im_dir.open_dir(im_list,'test'):
-    #     #load image and its information
-    #     t_start = time.time()
-    #     image,nW,nH,chan,name,count = gen
-    #     print('   '+'{}.) Procesing Image : {}'.format(count,name))
-    #     #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
-    #     #the notation RGB (0,1,2 respectively))=
-    #     image = image[:,:,channel]
-    #     #Import train data (iXf training your model)
-    #     train_bool = TrainGUI.import_train_data(name,(nH,nW),trainDatDir)
-    #     plt.figure('image')
-    #     plt.imshow(image)
-    #     #extract features from image using method(SVM.filter_pipeline) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
-    #     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    #     im_segs, bool_segs, domains, paded_im_seg, paded_bool_seg, hog_features = ProcessPipe.feature_extract(image, ff_width, wiener_size, med_size,reduceFactor,True,train_bool)
-    #     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    #     tmp_X,tmp_y = ProcessPipe.create_data(hog_features,paded_bool_seg,True)
-    #     X.append(tmp_X)
-    #     y.append(tmp_y)
-    #     t_end = time.time()
-    #     print('     '+'Number of Segments : %i'%(len(im_segs)))
-    #     print('     '+"Processing Time for %s : %0.2f"%(name,(t_end-t_start)))
+    pool = mp.Pool(mp.cpu_count())
+    # result = Parallel(n_jobs=mp.cpu_count())(delayed(mainLoop)(i) for i in range(0,len(im_list))) # old - del 01/05/2022
+    pool.map_async(mainLoop, range(0,len(im_list)), callback=collect_result)
+    # close pool and let all the processes complete
+    pool.close()
+    pool.join()
+    # extract valid data into a neater structure
+    tmpDat = results[0]
+    X = []
+    y = []
+    for i in range(0,len(tmpDat)):
+        X.append(tmpDat[i][0])
+        y.append(tmpDat[i][1])
     #endfor
     print('done')
     # Save Data
-    tmpDat = result #[X,y]
+    tmpDat = (X,y)
     tmpSaveDir = join(aggDatDir, ('joined_data_'+dTime+'.pkl'))
     DataManager.save_obj(tmpSaveDir,tmpDat)
 #endif

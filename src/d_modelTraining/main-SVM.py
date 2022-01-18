@@ -13,10 +13,12 @@ print("Number of processors: ", mp.cpu_count())
 
 import numpy as np
 from os.path import dirname, join, abspath
+from os import mkdir
 
 from sklearn.svm import SVC
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, GridSearchCV
 from sklearn.pipeline import make_pipeline
+from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import RobustScaler
 
 import localModules.DataManager as DataManager
@@ -32,9 +34,15 @@ saveBin = join(cfpath,"saveBin")
 # Path to training files
 trainDatDir = abspath(join(cfpath,"..","b_dataAggregation","processedData","EL-11122021"))
 # Path to model
-modelDir = abspath(join(cfpath,"saveSVM"))
+modelDir = abspath(join(saveBin,"saveSVM"))
 # Path to cross-validated files
 cvDatDir = abspath(join(cfpath,"..","c_dataValidation","saveBin"))
+# Make directory for saves
+try:
+  mkdir(abspath(join(modelDir)))
+except FileExistsError:
+  print('Save folder for model already exists!')
+#endtry
 #%% Script Params
 # PARMS
 channel = 2
@@ -43,21 +51,7 @@ wiener_size = (5,5)
 med_size = 10
 start = 0
 count = 42
-dTime = '12242021' #date.today().strftime('%d%m%Y')
-#%%
-tmpSaveDir = join(cvDatDir, ('CVjoined_data_'+dTime+'.pkl'))
-tmpSave = DataManager.load_obj(tmpSaveDir)
-X_train = tmpSave[0]
-X_test = tmpSave[1]
-y_train = tmpSave[2]
-y_test = tmpSave[3]
-#%% Create SVM Pipeline
-pipe_svc = make_pipeline(RobustScaler(),SVC())
-
-#%% SVM MODEL FITTING
-# Create an instance of SVM and fit out data.
-print("starting modeling career...")
-
+dTime = '10012022' #date.today().strftime('%d%m%Y')
 #%% GRIDSEARCH PARAMS
 
 # param_range = [0.0001,0.001,0.01,0.1,1,10,100,1000]
@@ -96,21 +90,43 @@ param_grid2 = [{'svc__C': param_range2_C,
 #                 'svc__kernel':['poly'],
 #                 'svc__degree':poly_range}]
 
+#%%
+tmpSaveDir = join(cvDatDir, ('CVjoined_data_'+dTime+'.pkl'))
+tmpSave = DataManager.load_obj(tmpSaveDir)
+X_train = tmpSave[0]
+X_test = tmpSave[1]
+y_train = tmpSave[2]
+y_train = y_train.reshape(len(y_train),1)
+y_test = tmpSave[3]
+y_test = y_test.reshape(len(y_test),1)
+X = np.vstack((X_train,X_test))
+y = np.vstack((y_train,y_test))
+print("y_train: " + str(np.unique(y_train)))
+print("y_test: " + str(np.unique(y_test)))
+
+#%% Create SVM Pipeline
+pipe_svc = make_pipeline(RobustScaler(),SVC())
+
+#%% SVM MODEL FITTING
+# Create an instance of SVM and fit out data.
+print("starting modeling career...")
+
 #%% GRIDSEARCH (IF NECESSARY)
+"""
+gs = GridSearchCV(estimator = pipe_svc,
+                  param_grid = param_grid2,
+                  scoring = 'roc_auc',
+                  cv = 5,
+                  n_jobs = -1,
+                  verbose = 10)
 
-# gs = GridSearchCV(estimator = pipe_svc,
-#                   param_grid = param_grid2,
-#                   scoring = 'roc_auc',
-#                   cv = 5,
-#                   n_jobs = -1,
-#                   verbose = 10)
 
-
-# print("Fitting...")
-# gs = gs.fit(X_train,y_train)
-# print('best score: ' + str(gs.best_score_))
-# print(gs.best_params_)
-# pipe_svc = gs.best_estimator_
+print("Fitting...")
+gs = gs.fit(X_train,y_train)
+print('best score: ' + str(gs.best_score_))
+print(gs.best_params_)
+pipe_svc = gs.best_estimator_
+"""
 ### END Gridsearch ####
 
 #%% PARAMETER SETTING (IF AVAILABLE)
@@ -127,16 +143,21 @@ pipe_svc.set_params(svc__C =  130,
                     svc__decision_function_shape = 'ovr')
 
 #%% MODEL FITTING
-model = pipe_svc.fit(X_train,y_train)
-y_score = model.decision_function(X_test)
-print(pipe_svc.score(X_test,y_test))
-filename = join(modelDir,('fitted_'+dTime+'.sav'))
+model = pipe_svc.fit(X_train,y_train) # Train Model
+y_score = model.decision_function(X_test) # get scores and predictions for test set
+print(model.score(X_test,y_test)) # print roc-auc of model fit
+filename = join(modelDir,('fittedSVM_'+dTime+'.sav'))
 pickle.dump(model, open(filename, 'wb'))
 print('done')
+
+y_predict = model.predict(X_test)
+y_train_predict = model.predict(X_train)
+print('RF Train accuracy',accuracy_score(y_train, y_train_predict))
+print('RF Test accuracy',accuracy_score(y_test,y_predict))
 #%% CROSS VALIDATION
 scores = cross_val_score(estimator = model,
-                          X = X_test,
-                          y = y_test,
+                          X = X,
+                          y = y,
                           cv = 10,
                           scoring = 'roc_auc',
                           verbose = 5,

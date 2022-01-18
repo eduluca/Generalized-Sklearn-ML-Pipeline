@@ -129,3 +129,48 @@ print('done')
 predictions = model.predict(X)
 # predict_im = data_to_img(boolim2_2,predictions)
 ProcessPipe.overlayValidate(image, predictions, domains)
+
+#%% EDUARDO'S ROC IMPLEMENTATION
+"""
+# ==== RANDOM FOREST MODEL ==== #
+#ROC/AUC score
+RFmodel = 
+print('RF Train ROC/AUC Score', roc_auc_score(y_train, RFmodel.predict_proba(X_train)[:,1]))
+print('RF Test ROC/AUC Score', roc_auc_score(y_test, RFmodel.predict_proba(X_test)[:,1]))
+
+#ROC/AUC plotting
+plt.figure(1)
+
+fpr, tpr, thresholds = roc_curve(y_test, RFmodel.predict_proba(X_test)[:,1],drop_intermediate=False)
+
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.0])
+plt.title('ROC curve for Serotonin Classifier')
+plt.xlabel('False Positive Rate (1 - Specificity)')
+plt.ylabel('True Positive Rate (Sensitivity)')
+plt.plot(fpr,tpr,label = 'RForest(area = %0.2f)' 
+         % roc_auc_score(y_test, RFmodel.predict_proba(X_test)[:,1]), color='blue',lw=3)
+"""
+"""
+# ==== XGBOOST MODEL ==== #
+#ROC/AUC score
+print('XGB Train ROC/AUC Score', roc_auc_score(y_train, XGBmodel.predict_proba(X_train)[:,1]))
+print('XGB Test ROC/AUC Score', roc_auc_score(y_test, XGBmodel.predict_proba(X_test)[:,1]))
+
+#ROC/AUC plotting
+plt.figure(1)
+
+fpr, tpr, thresholds = roc_curve(y_test, XGBmodel.predict_proba(X_test)[:,1],drop_intermediate=False)
+plt.plot(fpr,tpr,label = 'XGBoost(area = %0.2f)' 
+         % roc_auc_score(y_test, XGBmodel.predict_proba(X_test)[:,1]), color='red',lw=3)
+"""
+"""
+# ==== KNN MODEL ==== #
+### ROC Curve ###
+fpr, tpr,_ = roc_curve(y_test, y_score[:,1])
+roc_auc = auc(fpr, tpr)
+ProcessPipe.write_auc(fpr,tpr)
+#fpr,tpr,roc_auc = kNN.read_auc()
+plt.figure(1)
+plt.plot(fpr, tpr, color='lightblue', lw=3, label='KNN (area = %0.2f)' % roc_auc)
+"""

@@ -1,0 +1,96 @@
+Metadata-Version: 2.1
+Name: mlgtrain2test
+Version: 1.0.0
+Summary: UNKNOWN
+Home-page: https://github.com/JacobSal/Generalized-Sklearn-ML-Pipeline
+Author: Jacob Salminen
+Author-email: jsalminen@ufl.edu
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Framework :: Electron
+Classifier: Intended Audience :: Developers
+Classifier: Development Status :: 1 - Alpha
+Classifier: License :: Other/Proprietary License
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Internet :: WWW/HTTP :: WSGI :: Application
+Provides-Extra: devel
+License-File: LICENSE
+
+# Generalized-Sklearn-ML-Pipeline
+Summary: Image processing pipeline for serotonin detection using SVM and Gradient Bossting Algorithms.
+
+# a_dataGeneration
+Folders: __pycache__, rawData
+Files: __init__.py, TrainGUI.py
+
+### TrainGUI.py
+
+# b_dataAggregation
+Folders: __pycache__, aggregateData, processedData
+Files: __init__.py, dataPreProcessing.py
+## Folders
+1. __pychache__:: codegen folder for cython compiles.
+
+2. aggregateData:: folder for storing the pickled and concatenated training data.
+
+3. processData:: folder for storing RAW training 
+
+## Files
+### dataPreProcessing.py
+
+# c_dataValidation
+Folders: saveBin
+Files: __init__.py, dataCrossValid.py
+## Folders
+1. saveBin:: folder for storing the train-test split data (k-fold). 
+
+## Files
+### dataCrossValid.py
+
+# d_modelTrianing
+Folders: saveBin
+Files: __init__.py, main-KNN.py, main-SVM.py, main-XGB.py
+## Folders
+1. saveBin:: folder contains folders for saving each model generated from data.
+
+## Files
+### main-SVM.py 
+
+
+### main-KNN.py
+
+
+### main-SVM.py
+
+
+### main-XGB.py
+
+
+# e_modelTesting
+Folders: saveBin
+Files: __init__.py, modelTesting.py
+## Folders
+1. saveBin:: folder contains figures and images made availble by using modelTesting.py
+
+## Files
+### modelTesting.py
+
+
+# localModules
+Folders: __pycache__
+Files: DataManager.py, Filters.py, ProcessPipe.py, ThreeD_Recon_V3.py
+## Folders
+1. __pycache__: codegen folder for cython compiles.
+
+## Files
+### DataManager.py
+Handles directory management and image selection. includes funcitonallity to create & load pickled objects.
+### Filters.py 
+Various filters for producing features and segmentations. (included: wiener filter, median filter, generalized convolver, image normalization, gabor filter, contour generation based on thresholding, adaptive thresholding, Hi-pass filter using dFFT (discrete fourier transform), mean filter, gaussian blurring, edge detection using differential convolution, downsampling using countless & zero-corrected countless.  
+### ProcessPipe.py
+ 
+### ThreeD_Recon_V3.py
+
+

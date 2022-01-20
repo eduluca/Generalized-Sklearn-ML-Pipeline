@@ -16,7 +16,7 @@ from os.path import dirname, join, abspath
 
 from sklearn.model_selection import train_test_split
 
-import localModules.DataManager as DataManager
+import src.localModules.DataManager as DataManager
 
 #%% PATHS 
 # Path to file

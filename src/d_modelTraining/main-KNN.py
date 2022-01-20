@@ -26,8 +26,8 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors import KNeighborsClassifier
 
-import localModules.ProcessPipe as ProcessPipe
-import localModules.DataManager as DataManager
+import src.localModules.ProcessPipe as ProcessPipe
+import src.localModules.DataManager as DataManager
 
 #%% PATHS 
 # Path to file

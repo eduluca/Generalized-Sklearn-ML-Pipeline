@@ -15,9 +15,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from os.path import join, abspath, dirname
 
-import localModules.ProcessPipe as ProcessPipe
-from a_dataGeneration import TrainGUI
-import localModules.DataManager as DataManager
+import src.localModules.ProcessPipe as ProcessPipe
+from src.a_dataGeneration import TrainGUI
+import src.localModules.DataManager as DataManager
 
 #%% Globals
 dTime = date.today().strftime('%d%m%Y')

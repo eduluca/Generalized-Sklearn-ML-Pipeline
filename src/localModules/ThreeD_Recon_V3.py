@@ -17,7 +17,7 @@ import csv
 from scipy.ndimage import convolve
 from skimage.morphology import remove_small_objects,binary_closing
 from skimage.measure import label
-import pickle
+import dill as pickle
 
 os.getcwd()
 

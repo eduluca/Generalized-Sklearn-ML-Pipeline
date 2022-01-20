@@ -9,7 +9,6 @@ import os
 import numpy as np
 import cv2
 import dill as pickle
-import sys
 
 class DataMang:
     def __init__(self,directory):

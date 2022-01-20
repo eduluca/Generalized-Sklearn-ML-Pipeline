@@ -18,7 +18,7 @@ from sklearn.ensemble import  RandomForestClassifier
 
 from xgboost import XGBClassifier
 
-import localModules.DataManager as DataManager
+import src.localModules.DataManager as DataManager
 
 #%% PATHS 
 # Path to file

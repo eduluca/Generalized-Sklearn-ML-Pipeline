@@ -21,7 +21,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import RobustScaler
 
-import localModules.DataManager as DataManager
+import src.localModules.DataManager as DataManager
 import dill as pickle
 
 #%% PATHS 

@@ -21,9 +21,9 @@ import os
 import time
 import csv
 
-from localModules import Filters
-from localModules import DataManager
-from a_dataGeneration import TrainGUI
+from src.localModules import Filters
+from src.localModules import DataManager
+from src.a_dataGeneration import TrainGUI
 
 # import xlwings as xw
 

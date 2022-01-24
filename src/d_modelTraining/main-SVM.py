@@ -21,7 +21,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import RobustScaler
 
-import src.localModules.DataManager as DataManager
+import localModules.DataManager as DataManager
 import dill as pickle
 
 #%% PATHS 
@@ -100,7 +100,7 @@ y_train = y_train.reshape(len(y_train),1)
 y_test = tmpSave[3]
 y_test = y_test.reshape(len(y_test),1)
 X = np.vstack((X_train,X_test))
-y = np.vstack((y_train,y_test))
+y = np.vstack((y_train,y_test)).ravel()
 print("y_train: " + str(np.unique(y_train)))
 print("y_test: " + str(np.unique(y_test)))
 

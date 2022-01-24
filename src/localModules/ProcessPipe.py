@@ -38,6 +38,20 @@ save_bin = os.path.join(dirname,"save-bin")
 global data,labels
 
 def generate_train_sert_ID(boolim,image):
+    """
+
+    Parameters
+    ----------
+    boolim : ARRAY of LOGICALS
+        DESCRIPTION.
+    image : ARRAY of FLOATS
+        DESCRIPTION.
+
+    Returns
+    ------
+    
+
+    """
     if type(boolim[0,0]) != np.bool_:
         raise TypeError("args need to be type bool and tuple respectively")
     'end if'
@@ -67,6 +81,18 @@ def generate_train_sert_ID(boolim,image):
 
 
 def generate_test_sert_ID(boolim,image):
+    """
+
+    Parameters
+    ----------
+    boolim : ARRAY of LOGICALS
+        DESCRIPTION.
+    image : ARRAY of FLOATS
+
+    Returns
+    ----------
+
+    """
     if type(boolim[0,0]) != np.bool_:
         raise TypeError("args need to be type bool and tuple respectively")
     'end if'
@@ -86,6 +112,17 @@ def generate_test_sert_ID(boolim,image):
 'end def'
 
 def get_coef(generator):
+    """
+
+    Parameters
+    ----------
+    generator : GENERATOR 
+        DESCRIPTION.
+
+    Returns
+    ------
+
+    """
     weights = []
     for clf in generator:
         weights.append(clf.coef_)
@@ -123,6 +160,10 @@ def plot_contours(ax, clf, xx, yy, **params):
     xx: meshgrid ndarray
     yy: meshgrid ndarray
     params: dictionary of params to pass to contourf, optional
+
+    Returns
+    -------
+    out : 
     """
     Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
     Z = Z.reshape(xx.shape)
@@ -130,27 +171,43 @@ def plot_contours(ax, clf, xx, yy, **params):
     return out
 
 def gen_point_vector(image):
-    point_data = np.zeros((image.shape[0]*image.shape[1],2))
-    count = 0
-    for i in range(0,image.shape[0]):
-        for j in range(0,image.shape[1]):
-            point_data[count,:] = [i,j]
-            count += 1
-        'end for'
-    'end for'
-    return point_data
-'end def'
-
-
-
-def img_to_data(image,mask,keep_all = True,*kwargs):
     """
 
     Parameters
     ----------
-    image : TYPE
+    image : ARRAY of FLOATS
         DESCRIPTION.
-    **params : image data type float32[:,:]
+
+    Returns
+    ------
+    pointData
+
+    """
+    pointData = np.zeros((image.shape[0]*image.shape[1],2))
+    count = 0
+    for i in range(0,image.shape[0]):
+        for j in range(0,image.shape[1]):
+            pointData[count,:] = [i,j]
+            count += 1
+        'end for'
+    'end for'
+    return pointData
+'end def'
+
+
+
+def img_to_data(image,mask,keepAll = True,*kwargs):
+    """
+
+    Parameters
+    ----------
+    image : ARRAY of FLOATS
+        DESCRIPTION.
+    mask : ARRAY of LOGICALS
+        DESCRIPTION.
+    keepAll : LOGICAL
+        DESCRIPTION.
+    *kwargs : image data type float32[:,:]
         DESCRIPTION.
 
     Returns
@@ -177,10 +234,9 @@ def img_to_data(image,mask,keep_all = True,*kwargs):
     mask_r = mask_r.reshape(mask_r.shape[0],1)
     point_data = gen_point_vector(image)
     
-    if keep_all:
+    if keepAll:
         data = con_data
-        bool_set = mask_r.astype(int)
-        
+        bool_set = mask_r.astype(int)        
     else:
         masked = np.multiply(con_data,mask_r)
         masked_new = np.zeros((nonzero,con_data.shape[1]))
@@ -202,44 +258,80 @@ def img_to_data(image,mask,keep_all = True,*kwargs):
     return data,bool_set,point_data
 'end def'
 
-def data_to_img(mask,predicitons,positions):
-    newim = np.zeros((mask.shape[0],mask.shape[1]))
+def data_to_img(mask,predictions):
+    """
+
+    Parameters
+    ----------
+    mask : ARRAY of LOGICALS
+        DESCRIPTION.
+    predictions : LIST of LOGICALS
+        DESCRIPTION.
+
+    Returns
+    ------
+    newIm
+
+    """
+    newIm = np.zeros((mask.shape[0],mask.shape[1]))
     count = 0
     for i,row in enumerate(mask):
         for j,col in enumerate(row):
             if col == True:
-                newim[i,j] = predictions[count]
+                newIm[i,j] = predictions[count]
                 count += 1
-            'end if'
-        'end for'
-    'end for'
-    return newim
+            #endif
+        #endfor
+    #endfor
+    return newIm
 
-def get_nonzeros(image,val_vector,mask,tru_type = True):
+def get_nonzeros(image,valVector,mask,trueType = True):
+    """
+
+    Parameters
+    ----------
+    image : ARRAY of FLOATS
+        DESCRIPTION.
+    valVector : ARRAY of LOGICALS
+        DESCRIPTION.
+    mask : ARRAY of LOGICALS
+        DESCRIPTION.
+    trueType : LOGICAL
+    **params : image data type float32[:,:]
+        DESCRIPTION.
+
+    Returns
+    ------
+    valsNew
+    maskNew
+    pointsNew
+    
+
+    """
     mask = mask.ravel()
     mask = mask.reshape(mask.shape[0],1)
     
     masklen = np.sum(mask.astype(int))
     
-    mask_new = np.zeros((masklen,mask.shape[1]))
-    points_new = np.zeros((masklen,2))
+    maskNew = np.zeros((masklen,mask.shape[1]))
+    pointsNew = np.zeros((masklen,2))
     
     points = gen_point_vector(image)
-    vals_new = np.zeros((masklen,val_vector.shape[1]))
+    valsNew = np.zeros((masklen,valVector.shape[1]))
     
     count = 0        
     for i,x in enumerate(mask.astype(int)):
         if x != 0:
-            vals_new[count,:] = val_vector[i,:]
-            points_new[count,:] = points[i,:]
-            if tru_type:
+            valsNew[count,:] = valVector[i,:]
+            pointsNew[count,:] = points[i,:]
+            if trueType:
                 # vals_new[count,-1] = 1
-                mask_new[count,0] = 1
+                maskNew[count,0] = 1
             else:
                 # vals_new[count,-1] = 0
-                mask_new[count,0] = 0
+                maskNew[count,0] = 0
             count += 1
-    return vals_new,mask_new.astype(int),points_new
+    return valsNew,maskNew.astype(int),pointsNew
 
 # @optunity.cross_validated(x=data,y=labels,num_folds=5,regenerate_folds=True)
 # def svm_rbf_tuned_auroc(x_train, y_train, x_test, y_test, logC, logGamma):
@@ -313,10 +405,23 @@ def filter_pipeline(image,ff_width,wiener_size,med_size,multiplier_a=1,multiplie
 
 def im_watershed(image,train = True, boolim = np.array([]),a=3,d=2):
     """
+
+    Parameters
+    ----------
     image : np.array(float32)
         DESCRIPTION : 
     train : boolean
         DESCRIPTION : if train == True set boolim = np.array()
+    boolim : ARRAY of LOGICALS
+        DESCRIPTION :
+    a :
+        DESCRIPTION
+    d :
+        DESCRIPTION
+
+    Returns
+    -------
+
     segments image using a watersheding method with distance_transform_edt as the 
     descriminator. Returns list of segments
     """
@@ -342,6 +447,23 @@ def im_watershed(image,train = True, boolim = np.array([]),a=3,d=2):
     return im_list,bool_list,f
 
 def cut_segs(im_list,bool_list,standardDim = 40,train = True):
+    """
+
+    Parameters
+    ----------
+    image : TYPE
+        DESCRIPTION.
+    mask : ARRAY of LOGICALS
+    keepAll : LOGICAL
+    **params : image data type float32[:,:]
+        DESCRIPTION.
+
+    Returns
+    ------
+    array of data of shape [image.shape[0]*image.shape[1],number_of_parameters + image_data] represents
+    all the parameters to be enetered into SVM image analysis
+
+    """
     imOutList = []
     boOutList = []
     #check dimensions
@@ -378,6 +500,9 @@ def cut_segs(im_list,bool_list,standardDim = 40,train = True):
 
 def pad_segs(im_list,bool_list,f,train = True,fill_val = 0):
     """
+
+    Parameters
+    ----------
     im_list
     bool_list
     f
@@ -386,6 +511,10 @@ def pad_segs(im_list,bool_list,f,train = True,fill_val = 0):
         DESCRIPTION : if train == True set bool_list = np.array()
     fill_val = 0 : TYPE, integer or function (e.g. np.nan)
         DESCRIPTION. 
+
+    Returns
+    -------
+
     """
     # get dimensions of larges segment to determine how much padding needs to be added to other images. Then perform reduction
     # based on the value of reduceN
@@ -428,6 +557,23 @@ def pad_segs(im_list,bool_list,f,train = True,fill_val = 0):
     return im_list, bool_list, f
 
 def downSampleStd(im_list, bool_list, train):
+    """
+
+    Parameters
+    ----------
+    image : TYPE
+        DESCRIPTION.
+    mask : ARRAY of LOGICALS
+    keepAll : LOGICAL
+    **params : image data type float32[:,:]
+        DESCRIPTION.
+
+    Returns
+    ------
+    array of data of shape [image.shape[0]*image.shape[1],number_of_parameters + image_data] represents
+    all the parameters to be enetered into SVM image analysis
+
+    """
     for i in range(0,len(im_list)):
         # reduce image segment using downsampling: figure out how to reduce the image to a specific resolution
         # get shape of image
@@ -459,6 +605,8 @@ def rotateNappend(im_list, bool_list):
 def feature_extract(image, ff_width, wiener_size, med_size,reduceFactor = 2, train = True,boolim = np.array([])):
     """
     SUMMARY : 
+    Parameters
+    ----------
     image : TYPE
         DESCRIPTION. 
     ff_width : TYPE
@@ -473,6 +621,9 @@ def feature_extract(image, ff_width, wiener_size, med_size,reduceFactor = 2, tra
         DESCRIPTION. 
     boolim = np.array([]) : TYPE, np.array([])
         DESCRIPTION. 
+
+    Returns
+    -------
     """
     hog_features = []
     hog_dim = (4,4)
@@ -502,6 +653,18 @@ def feature_extract(image, ff_width, wiener_size, med_size,reduceFactor = 2, tra
     return im_list, bool_list, f, dsIm_segs, dsBool_segs, dsHog_segs
 
 def get_hogs(hog_features):
+    """
+
+    Parameters
+    ----------
+    hog_features : TYPE
+        DESCRIPTION.
+
+    Returns
+    ------
+    hog
+
+    """
     hog = []
     for i,val in enumerate(hog_features):
         hog.append(val[0])
@@ -509,6 +672,25 @@ def get_hogs(hog_features):
     return hog
 
 def create_data(X,y,imNum,train=True):
+    """
+
+    Parameters
+    ----------
+    X : LIST of NP.ARRAYS
+        DESCRIPTION.
+    y : LIST of LOGICALS
+        DESCRIPTION.
+    imNum : INT
+        DESCRIPTION.
+    train : LOGICAL
+        DESCRIPTION.
+
+    Returns
+    ------
+    x_train
+    y_train
+
+    """
     y_train = []
     X_in = []
     for i in range(0,len(X)):
@@ -516,22 +698,39 @@ def create_data(X,y,imNum,train=True):
             X_in.append(X[i].ravel())
         except AttributeError:
             X_in = get_hogs(X)
+        #endtry
+    #endfor
     X_train = np.vstack(X_in)
     if train:
         for i in range(0,len(y)):
             tmpi = y[i] > 0
             tmp = (True in tmpi)
             y_train.append(tmp)
+        #endfor
         y_train = np.vstack(y_train).astype(int)
         imArr = np.tile(imNum,y_train.shape)
-        y_train = np.hstack(y_train,imArr)
+        y_train = np.hstack((y_train,imArr))
         return X_train, y_train
-    
+    #endif
     return X_train
+#enddef
 
 def gen_mask(image):
+    """
+
+    Parameters
+    ----------
+    image : ARRAY of FLOATS
+        DESCRIPTION.
+
+    Returns
+    ------
+    mask
+
+    """
     mask = image > 0
     return np.ma.masked_where(~mask, mask)
+#enddef
 
 def overlay_predictions(image,boolim,preds,y_test,ind_test,f,train=True,**kwargs):
     """
@@ -630,6 +829,20 @@ def overlayValidate(image,predictions,domains,**kwargs):
 #enddef
 
 def write_auc(fpr,tpr):
+    """
+
+    Parameters
+    ----------
+    fpr : LIST of FLOATS
+        DESCRIPTION.
+    tpr : LIST of FLOATS
+        DESCRIPTION.
+
+    Returns
+    ------
+    0
+
+    """
     with open(os.path.join(dirname,'save-bin\\svm_auc_roc.csv'),'w',newline='') as csvfile:
         spamwriter = csv.writer(csvfile,delimiter=' ',
                                 quotechar='|',quoting=csv.QUOTE_MINIMAL)
@@ -637,10 +850,24 @@ def write_auc(fpr,tpr):
             spamwriter.writerow([fpr[i],tpr[i]])
     return 0
     
-def read_auc():
+def read_auc(path2aucroc):
+    """
+
+    Parameters
+    ----------
+    path2aucroc : PATH
+        DESCRIPTION.
+
+    Returns
+    ------
+    fpr
+    tpr
+    roc_auc
+
+    """
     fpr = []
     tpr = []
-    with open(os.path.join(dirname,'save-bin\\svm_auc_roc.csv'),'r',newline='') as csvfile:
+    with open(path2aucroc,'r',newline='') as csvfile:
         spamreader = csv.reader(csvfile,delimiter=' ',
                                 quotechar='|')
         for row in spamreader:
@@ -654,12 +881,16 @@ def read_auc():
 
 def padPreProcessed(X):
     """
-    im_list
-    train : boolean
-        DESCRIPTION : if train == True set bool_list = np.array()
-    f
-    fill_val = 0 : TYPE, integer or function (e.g. np.nan)
-        DESCRIPTION. 
+
+    Parameters
+    ----------
+    X : 
+        DESCRIPTION
+
+    Retruns
+    -------
+    padedX
+
     """
     lenX = []
     padedX = []
@@ -681,7 +912,19 @@ def padPreProcessed(X):
 
 import random
 
-def random_ind(a,b,N):
+def random_ind(N):
+    """
+
+    Parameters
+    ----------
+    N : INT
+        DESCRIPTION.
+
+    Returns
+    ------
+    ints
+
+    """
     ints = []      
     for i in range(0,N):
       ints.append(random.randint(0,64))

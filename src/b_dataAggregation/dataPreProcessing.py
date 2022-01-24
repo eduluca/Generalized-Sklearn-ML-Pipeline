@@ -12,7 +12,7 @@ import multiprocessing as mp
 # from joblib import Parallel, delayed
 
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pltc
 from os.path import join, abspath, dirname
 
 import src.localModules.ProcessPipe as ProcessPipe
@@ -40,17 +40,13 @@ im_dir = DataManager.DataMang(folderName)
 im_list = [3,4,5,6,10,12,13,14,21,26,27,28,29,35] #[i for i in range(start,im_dir.dir_len)]
 
 #%% DEFINITIONS
-def robust_save(fname):
-    plt.savefig(join(fname,'overlayed_predictions.png',dpi=200,bbox_inches='tight'))
-#enddef
-
 # Callback function to collec the output from parallel processing in 'result'
 def collect_result(result):
     global results
     results.append(result)
 
-def mainLoop(i):
-    global dTime, cfpath, folderName, trainDatDir, saveBin, aggDatDir, im_dir, im_list
+def mainLoop(fileNum):
+    global dTime, cfpath, trainDatDir, saveBin, aggDatDir, im_dir, im_list
     #%% PARAMS ###
     channel = 2
     ff_width = 121
@@ -58,8 +54,7 @@ def mainLoop(i):
     med_size = 10
     count = 42
     reduceFactor = 2
-
-    # im_list NOTES: removed 3 (temporary),
+    
     #define variables for loops
     hog_features = [np.array([],dtype='float64')]
     im_segs = [np.array([],dtype='float64')]
@@ -67,8 +62,7 @@ def mainLoop(i):
 
     t_start = time.time()
     #opend filfe
-    fNum = im_list[i]
-    image,nW,nH,_,name,count = im_dir.openFileI(fNum)
+    image,nW,nH,_,name,count = im_dir.openFileI(fileNum)
     #load image and its information
     print('   '+'{}.) Procesing Image : {}'.format(count,name))
     #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
@@ -80,7 +74,7 @@ def mainLoop(i):
     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
     im_segs, bool_segs, _, _, _, hog_features = ProcessPipe.feature_extract(image, ff_width, wiener_size, med_size,reduceFactor,True,train_bool)
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    tmp_X,tmp_y = ProcessPipe.create_data(hog_features,bool_segs,fNum,True)
+    tmp_X,tmp_y = ProcessPipe.create_data(hog_features,bool_segs,fileNum,True)
     t_end = time.time()
     print('     '+'Number of Segments : %i'%(len(im_segs)))
     print('     '+"Processing Time for %s : %0.2f"%(name,(t_end-t_start)))
@@ -89,6 +83,12 @@ def mainLoop(i):
 #enddef
 #%% LOOP: Image Parsing/Pre-Processing 
 if __name__ == '__main__':
+    for i in im_list:
+        result = mainLoop(i)
+        break
+    #endfor
+
+    '''
     print("Number of processors: ", mp.cpu_count())
     #%% Loop Start
     print('Starting PreProcessing Pipeline...')
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     im_dir = DataManager.DataMang(folderName)
     pool = mp.Pool(mp.cpu_count())
     # result = Parallel(n_jobs=mp.cpu_count())(delayed(mainLoop)(i) for i in range(0,len(im_list))) # old - del 01/05/2022
-    pool.map_async(mainLoop, range(0,len(im_list)), callback=collect_result)
+    pool.map_async(mainLoop, im_list, callback=collect_result)
     # close pool and let all the processes complete
     pool.close()
     pool.join()
@@ -114,4 +114,5 @@ if __name__ == '__main__':
     tmpDat = (X,y)
     tmpSaveDir = join(aggDatDir, ('joined_data_'+dTime+'.pkl'))
     DataManager.save_obj(tmpSaveDir,tmpDat)
+    '''
 #endif

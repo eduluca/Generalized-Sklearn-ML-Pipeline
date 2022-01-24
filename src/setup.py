@@ -21,6 +21,7 @@ setuptools.setup(
     # All versions are fixed just for case. Once in while try to check for new versions.
     install_requires=[
         'wheel==0.37.1',
+        'Cython',
         'backcall==0.2.0',
         'colorama==0.4.4',
         'cycler==0.10.0',

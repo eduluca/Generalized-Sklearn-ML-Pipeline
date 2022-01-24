@@ -524,8 +524,8 @@ def create_data(X,y,imNum,train=True):
             y_train.append(tmp)
         y_train = np.vstack(y_train).astype(int)
         imArr = np.tile(imNum,y_train.shape)
-        y_train = np.hstack(y_train,imArr)
-        return X_train, y_train
+        y_train = np.hstack([y_train,imArr])
+        return [X_train, y_train]
     
     return X_train
 
@@ -690,7 +690,7 @@ def random_ind(a,b,N):
 ### Testing ###
 
 if __name__ == '__main__':
-    import localModules.ProcessPipe as ProcessPipe
+    import src.localModules.ProcessPipe as ProcessPipe
 
     ### PARAMS ###
     channel = 2

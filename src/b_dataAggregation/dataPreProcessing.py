@@ -3,22 +3,25 @@
 Created on Wed Jan 13 19:02:19 2021
 
 @author: Jacob Salminen
-@version: 1.0.20
+@version: 1.0
 """
 #%% IMPORTS
 import time
 import os
+import sys
 from datetime import date
 import multiprocessing as mp
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 import numpy as np
 import matplotlib.pyplot as plt
 from os.path import join, abspath, dirname
 
-import src.localModules.ProcessPipe as ProcessPipe
-from src.a_dataGeneration import TrainGUI
-import src.localModules.DataManager as DataManager
-
+from localPkg.preproc import ProcessPipe
+from localPkg.datmgmt import DataManager
+from localPkg.disp import LabelMaker
 #%% Globals
 dTime = date.today().strftime('%d%m%Y')
 results = []
@@ -73,7 +76,7 @@ def mainLoop(fileNum):
     #the notation RGB (0,1,2 respectively))=
     image = image[:,:,channel]
     #Import train data (if training your model)
-    train_bool = TrainGUI.import_train_data(name,(nH,nW),trainDatDir)
+    train_bool = LabelMaker.import_train_data(name,(nH,nW),trainDatDir)
     #extract features from image using method(SVM.filter_pipeline) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
     im_segs, bool_segs, _, _, _, hog_features = ProcessPipe.feature_extract(image, ff_width, wiener_size, med_size,reduceFactor,True,train_bool)
@@ -92,19 +95,19 @@ def mainLoop(fileNum):
 if __name__ == '__main__':
     print("Number of processors: ", mp.cpu_count())
     #%% Loop Start - Basic Loop
-    print('Starting PreProcessing Pipeline...')
-    for i in im_list:
-        result = mainLoop(i)
-        break
-    #endfor
+    # print('Starting PreProcessing Pipeline...')
+    # for i in im_list:
+    #     result = mainLoop(i)
+    #     break
+    # #endfor
 
     #%% Loop Start - multiprocessing documentation ex
     #! see. https://docs.python.org/3/library/multiprocessing.html !#
-    mp.set_start_method('spawn')
-    # q = mp.Queue()
-    p = mp.Process(target = mainLoop, args = (im_list))
-    p.start()
-    p.join()
+    # mp.set_start_method('spawn')
+    # # q = mp.Queue()
+    # p = mp.Process(target = mainLoop, args = (im_list,))
+    # p.start()
+    # p.join()
 
     #%% Loop Start - parallel processing
     # import concurrent.futures
@@ -113,9 +116,9 @@ if __name__ == '__main__':
     #endwith
 
     #%% Loop Start - async-multi processing num. 1
-    # from joblib import Parallel, delayed
-    # threadN = mp.cpu_count()-2;
-    # results = Parallel(n_jobs=threadN)(delayed(mainLoop)(i) for i in im_list) # old - del 01/05/2022
+    from joblib import Parallel, delayed
+    threadN = mp.cpu_count()-2
+    results = Parallel(n_jobs=threadN)(delayed(mainLoop)(i) for i in im_list) # old - del 01/05/2022
 
     #%% Loop Start - async-multi processing num. 2
     # pool = mp.Pool(mp.cpu_count())   

@@ -16,9 +16,8 @@ import matplotlib.pyplot as plt
 from os.path import dirname, join, abspath
 
 from sklearn.metrics import confusion_matrix, auc, roc_curve
-
-import localModules.ProcessPipe as ProcessPipe
-import localModules.DataManager as DataManager
+from localPkg.preproc import ProcessPipe
+from localPkg.datmgmt import DataManager
 
 #%% PATHS 
 # Path to file
@@ -96,7 +95,6 @@ plt.savefig(join(saveBin,'roc_auc_curve.png'),dpi=200,bbox_inches='tight')
 
 #%% TEST RANDOM IMAGE AND VALIDATE VISUALLY
 #imports
-import localModules.ProcessPipe as ProcessPipe
 #pick a test image
 im_list_test = [0]
 reduceFactor = 2

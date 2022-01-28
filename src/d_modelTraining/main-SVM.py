@@ -103,7 +103,7 @@ y_train = y_train.reshape(len(y_train),1)
 y_test = tmpSave[3]
 y_test = y_test.reshape(len(y_test),1)
 X = np.vstack((X_train,X_test))
-y = np.vstack((y_train,y_test))
+y = np.ravel(np.vstack((y_train,y_test)))
 print("y_train: " + str(np.unique(y_train)))
 print("y_test: " + str(np.unique(y_test)))
 

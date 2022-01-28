@@ -342,40 +342,110 @@ def im_watershed(image,train = True, boolim = np.array([]),a=3,d=2):
             bool_list.append(boolim[seg])
     return im_list,bool_list,f
 
-def cut_segs(im_list,bool_list,standardDim = 40,train = True):
-    imOutList = []
-    boOutList = []
-    #check dimensions
-    for k in range(0,len(im_list)):
-        nH,nW = im_list[k].shape
-        if nH > standardDim or nW > standardDim:
-            imOutList.append(im_list[k])
-            if train:
-                boOutList.append(bool_list[k])
+# def cut_segs(im_list,bool_list,standardDim = 40,train = True):
+#     imOutList = []
+#     boOutList = []
+#     #check dimensions
+#     for k in range(0,len(im_list)):
+#         nH,nW = im_list[k].shape
+#         if nH > standardDim or nW > standardDim:
+#             imOutList.append(im_list[k])
+#             if train:
+#                 boOutList.append(bool_list[k])
+#             #endif
+#             continue
+#         #endif
+#         leftoH = np.arange(0,int(nH/standardDim)*standardDim+1,standardDim) #create cuts for horizontal
+#         leftoW = np.arange(0,int(nW/standardDim)*standardDim+1,standardDim) #create cuts for widths
+#         if nH%standardDim != 0:
+#             leftoH = list(np.append(leftoH,nH-leftoH[-1])) #append leftover
+#         #endif
+#         if nW%standardDim != 0:
+#             leftoW = list(np.append(leftoW,nW-leftoW[-1])) #append leftover
+#         #endif
+#         for i in range(0,len(leftoH)):
+#             h1 = leftoH[i]
+#             h2 = leftoH[i+1]
+#             for j in range(0,len(leftoW)):
+#                 w1 = leftoW[j]
+#                 w2 = leftoW[j+1]
+#                 imOutList.append(im_list[k][h1:h2,w1:w2]) #generate to image list
+#                 if train:
+#                     boOutList.append(bool_list[k][h1:h2,w1:w2]) #generate new bool list
+#             #endfor
+#         #endfor
+#         return imOutList, boOutList
+# #enddef
+
+def _getSmallSquares(seg, nSet):
+    """
+    Parameters
+    ----------
+    seg
+    nSet
+
+    Returns
+    -------
+    subSegs
+
+    """
+    pady = 0 
+    padx = 0
+    leftOver = []
+    subSegs = []
+
+    yval = abs(seg[0].stop-seg[0].start)
+    xval = abs(seg[1].stop-seg[1].start)
+    dify = yval - nSet
+    difx = xval - nSet
+    if dify < 0 or difx < 0:
+        pady  = abs(dify)
+        padx  = abs(difx)
+    else:
+        remy  = yval//nSet
+        remx  = xval//nSet
+        if remy > 0:
+            difyy = yval - remy*nSet
+            pady  = nSet - difyy
+            cuts = np.arange(0,yval-difyy+1,nSet)
+            for i in range(0,remy):
+                tmpy[0].append(slice(cuts[i],cuts[i+1],None))
             #endif
-            continue
+            if difyy > 0:
+                tmpyy[0].append(slice(cuts[i+1],yval,None))
+            #endif
         #endif
-        leftoH = np.arange(0,int(nH/standardDim)*standardDim+1,standardDim) #create cuts for horizontal
-        leftoW = np.arange(0,int(nW/standardDim)*standardDim+1,standardDim) #create cuts for widths
-        if nH%standardDim != 0:
-            leftoH = list(np.append(leftoH,nH-leftoH[-1])) #append leftover
+        if remx > 0:
+            difxx = xval - remx*nSet
+            padx = nSet - difxx
+            cuts = np.arange(0,xval-difxx+1,nSet)
+            for i in range(0,remx):
+                tmpx[1].append(slice(cuts[i],cuts[i+1],None))
+            #endif
+            if difxx > 0:
+                tmpxx[1].append(slice(cuts[i+1],xval,None))
+            #endif
         #endif
-        if nW%standardDim != 0:
-            leftoW = list(np.append(leftoW,nW-leftoW[-1])) #append leftover
-        #endif
-        for i in range(0,len(leftoH)):
-            h1 = leftoH[i]
-            h2 = leftoH[i+1]
-            for j in range(0,len(leftoW)):
-                w1 = leftoW[j]
-                w2 = leftoW[j+1]
-                imOutList.append(im_list[k][h1:h2,w1:w2]) #generate to image list
-                if train:
-                    boOutList.append(bool_list[k][h1:h2,w1:w2]) #generate new bool list
-            #endfor
-        #endfor
-        return imOutList, boOutList
+    #endif
+    return subSegs, leftOver, pady, padx
+
+def _cutSquares(seg, subSegs, leftOver, pady, padx):
+    """
+    Parameters
+    ----------
+    subSegs
+    leftOver
+    pady
+    padx
+
+    Returns
+    -------
+    newImList
+
+    """
+    pass
 #enddef
+
 
 def pad_segs(im_list,bool_list,f,train = True,fill_val = 0):
     """
@@ -390,43 +460,22 @@ def pad_segs(im_list,bool_list,f,train = True,fill_val = 0):
     """
     # get dimensions of larges segment to determine how much padding needs to be added to other images. Then perform reduction
     # based on the value of reduceN
-    ySet = 300
-    xSet = 300
-    yval = []
-    xval = []
+    NSET = 50
     count = 0
-    for seg in f:
-        yval.append(abs(seg[0].stop-seg[0].start))
-        xval.append(abs(seg[1].stop-seg[1].start))
-    maxy = np.max(yval)
-    maxx = np.max(xval)
-    
-    if maxy < ySet or maxx < xSet:
-        maxy = ySet
-        maxx = xSet
-    else:
-        raise ValueError('maxy or maxx too big for current padding setting...')
-    #endif
-
-    if maxy != maxx:
-        maxMax = max(maxy,maxx) #find maximum index to make image square
-        maxMax = maxMax + maxMax%2 #Make even
-        maxx = maxx + (maxMax - maxx)
-        maxy = maxy + (maxMax - maxy)
-        #endif
-    #endif
+    newList = []
     
     for seg in f:
-        dify = maxy - abs(seg[0].stop-seg[0].start) 
-        difx = maxx - abs(seg[1].stop-seg[1].start)
-
-        if dify != 0 or difx != 0:
+        subSegs, leftOver, pady, padx = _getSmallSquares(seg,NSET)
+        if len(subSegs) > 0:
+            for ss in subSegs:
+                newList.append()
+        if pady != 0 or padx != 0:
             # Pad image segment on the right edge and bottom edge.
-            im_list[count] = np.pad(im_list[count],((0,dify),(0,difx)),'constant',constant_values=fill_val)
+            newList.append(np.pad(im_list[count],((0,pady),(0,padx)),'constant',constant_values=fill_val))
             if train:
-                bool_list[count] = np.pad(bool_list[count],((0,dify),(0,difx)),'constant',constant_values=fill_val)
+                bool_list[count] = np.pad(bool_list[count],((0,pady),(0,padx)),'constant',constant_values=fill_val)
         count += 1
-    return im_list, bool_list, f
+    return newList, bool_list, f
 
 def downSampleStd(im_list, bool_list, train):
     for i in range(0,len(im_list)):
@@ -586,7 +635,7 @@ def overlay_predictions(image,boolim,preds,y_test,ind_test,f,train=True,**kwargs
     return 0
 #enddef
 
-def overlayValidate(image,predictions,domains,**kwargs):
+def overlayValidate(image,predictions,domains,saveDir,**kwargs):
     """
     Parameters
     ----------
@@ -625,22 +674,22 @@ def overlayValidate(image,predictions,domains,**kwargs):
         plt.text(x1, y1-5, s, fontsize = 10, bbox=dict(fill=False, edgecolor='none', linewidth=2))
     plt.legend(handles = legend_ele, loc = 'lower right')
     plt.imshow(gen_mask(pred_im), alpha=0.3, cmap=ListedColormap(['red']))
-    plt.savefig(os.path.join(save_bin,'overlayed_predictions.tif'),dpi=200,bbox_inches='tight')
+    plt.savefig(os.path.join(saveDir,'overlayed_predictions.tif'),dpi=200,bbox_inches='tight')
     return 0
 #enddef
 
-def write_auc(fpr,tpr):
-    with open(os.path.join(dirname,'save-bin\\svm_auc_roc.csv'),'w',newline='') as csvfile:
+def write_auc(fpr,tpr,saveDir):
+    with open(saveDir,'w',newline='') as csvfile:
         spamwriter = csv.writer(csvfile,delimiter=' ',
                                 quotechar='|',quoting=csv.QUOTE_MINIMAL)
         for i in range(len(fpr)):
             spamwriter.writerow([fpr[i],tpr[i]])
     return 0
     
-def read_auc():
+def read_auc(saveDir):
     fpr = []
     tpr = []
-    with open(os.path.join(dirname,'save-bin\\svm_auc_roc.csv'),'r',newline='') as csvfile:
+    with open(saveDir,'r',newline='') as csvfile:
         spamreader = csv.reader(csvfile,delimiter=' ',
                                 quotechar='|')
         for row in spamreader:

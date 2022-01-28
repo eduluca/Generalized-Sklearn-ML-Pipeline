@@ -9,16 +9,15 @@ Created on Wed Jan 13 19:02:19 2021
 import time
 import os
 import sys
-from datetime import date
-import multiprocessing as mp
-
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
+import multiprocessing as mp
 import numpy as np
 import matplotlib.pyplot as plt
-from os.path import join, abspath, dirname
 
+from os.path import join, abspath, dirname
+from datetime import date
 from localPkg.preproc import ProcessPipe
 from localPkg.datmgmt import DataManager
 from localPkg.disp import LabelMaker
@@ -69,7 +68,7 @@ def mainLoop(fileNum):
 
     t_start = time.time()
     #opend filfe
-    image,nW,nH,_,name,count = im_dir.openFileI(fileNum)
+    image,nW,nH,_,name,count = im_dir.openFileI(fileNum,'train')
     #load image and its information
     print('   '+'{}.) Procesing Image : {}'.format(count,name))
     #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
@@ -95,11 +94,11 @@ def mainLoop(fileNum):
 if __name__ == '__main__':
     print("Number of processors: ", mp.cpu_count())
     #%% Loop Start - Basic Loop
-    # print('Starting PreProcessing Pipeline...')
-    # for i in im_list:
-    #     result = mainLoop(i)
-    #     break
-    # #endfor
+    print('Starting PreProcessing Pipeline...')
+    for i in im_list:
+        result = mainLoop(i)
+        break
+    #endfor
 
     #%% Loop Start - multiprocessing documentation ex
     #! see. https://docs.python.org/3/library/multiprocessing.html !#
@@ -116,9 +115,9 @@ if __name__ == '__main__':
     #endwith
 
     #%% Loop Start - async-multi processing num. 1
-    from joblib import Parallel, delayed
-    threadN = mp.cpu_count()-2
-    results = Parallel(n_jobs=threadN)(delayed(mainLoop)(i) for i in im_list) # old - del 01/05/2022
+    # from joblib import Parallel, delayed
+    # threadN = mp.cpu_count()-2
+    # results = Parallel(n_jobs=threadN)(delayed(mainLoop)(i) for i in im_list) # old - del 01/05/2022
 
     #%% Loop Start - async-multi processing num. 2
     # pool = mp.Pool(mp.cpu_count())   

@@ -102,18 +102,22 @@ class DataMang:
         'end for'
     'end def'
 
-    def openFileI(self,i):
+    def openFileI(self,i,step):
         f = self.files[i]
-        im = self._load_image_train(os.path.join(self.root,f))
+        if step == 'train':
+            im = self._load_image_train(os.path.join(self.root,f))
+        elif step == 'test':
+            im = self._load_image(os.path.join(self.root,f))
+        #endif
         name = [x for x in map(str.strip, f.split('.')) if x]
         # addition to handle naming convention provided by Yasin (Note: no spaces in names prefered -_-)
         if len(name)>2:
             n_out = '.'.join(name[:2])
         else:
             n_out = '.'.join(name[:1])
+        #endif
         nH,nW,chan = im.shape
         return (im,nW,nH,chan,n_out,i)
-    #enddef
 'end class'
 
 def yasin_DataHandler(imageName):

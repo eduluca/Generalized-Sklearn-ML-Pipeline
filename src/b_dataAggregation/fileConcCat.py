@@ -49,7 +49,7 @@ for r,d,f in os.walk(aggDatDir):
 #endfor
 
 #%%
-saveName = join(aggDatDir,"train-data-ALL")
+saveName = join(aggDatDir,"train-data-ALL.pkl")
 X = []
 y = []
 for i in range(0,len(files)):

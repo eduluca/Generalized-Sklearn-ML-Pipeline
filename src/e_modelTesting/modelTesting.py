@@ -6,21 +6,26 @@ Created on Wed Jan 13 19:02:19 2021
 @version: 1.0.0
 """
 #%% IMPORTS
-import time
-from datetime import date
+import os
+import sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from sklearn.pipeline import Pipeline
 import multiprocessing as mp
-print("Number of processors: ", mp.cpu_count())
-
 import numpy as np
+import time
 import matplotlib.pyplot as plt
+
 from os.path import dirname, join, abspath
-
+from datetime import date
 from sklearn.metrics import confusion_matrix, auc, roc_curve
-
-import localModules.ProcessPipe as ProcessPipe
-import localModules.DataManager as DataManager
+from localPkg.preproc import ProcessPipe
+from localPkg.disp import LabelMaker
+from localPkg.datmgmt import DataManager
 
 #%% PATHS 
+print("Number of processors: ", mp.cpu_count())
 # Path to file
 cfpath = dirname(__file__) 
 # Path to images to be processed
@@ -30,9 +35,49 @@ saveBin = join(cfpath,"saveBin")
 # Path to training files
 trainDatDir = abspath(join(cfpath,"..","b_dataAggregation","processedData","EL-11122021"))
 # Path to model
-modelDir = abspath(join(cfpath,"saveSVM"))
+modelDir = abspath(join(cfpath,"..", "d_modelTraining","saveBin","saveSVM"))
 # Path to cross-validated files
 cvDatDir = abspath(join(cfpath,"..","c_dataValidation","saveBin"))
+#%% DEFINITIONS
+X = [] 
+def mainLoop(fileNum):
+    global dTime, cfpath, folderName, trainDatDir, saveBin, X, im_dir
+    #%% PARAMS ###
+    channel = 2
+    ff_width = 121
+    wiener_size = (5,5)
+    med_size = 10
+    count = 42
+    reduceFactor = 2
+    # im_list NOTES: removed 3 (temporary),
+    #define variables for loops
+    hog_features = [np.array([],dtype='float64')]
+    im_segs = [np.array([],dtype='float64')]
+    bool_segs = [np.array([],dtype='float64')]
+    t_start = time.time()
+    #opend file
+    image,nW,nH,_,name,count = im_dir.openFileI(fileNum,'test')
+    #load image and its information
+    print('   '+'{}.) Procesing Image : {}'.format(count,name))
+    #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
+    #the notation RGB (0,1,2 respectively))
+    image = image[:,:,channel]
+    #extract features from image using method(ProcessPipe.feature_extract) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
+    #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
+    im_segs, bool_segs, domains, paded_im_seg, paded_bool_seg, hog_features = ProcessPipe.feature_extract(image, ff_width, wiener_size, med_size,reduceFactor,False)
+    #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
+    tmp_X = ProcessPipe.create_data(hog_features,bool_segs,fileNum,False)
+    X.append(tmp_X)
+    t_end = time.time()
+    print('     '+'Number of Segments : %i'%(len(im_segs)))
+    print('     '+"Processing Time for %s : %0.2f"%(name,(t_end-t_start)))
+    #stack X
+    X = np.vstack(X)
+    #Typing for memory constraints
+    X = np.float32(X)
+    #endfor
+    return image, domains
+#enddef
 #%% Script Params
 # PARMS
 channel = 2
@@ -41,10 +86,10 @@ wiener_size = (5,5)
 med_size = 10
 start = 0
 count = 42
-dTime = '12242021' #date.today().strftime('%d%m%Y')
+dTime = '10012022' #'12242021' #date.today().strftime('%d%m%Y')
 #%% MODEL TESTING
 #load model
-modelPath = join(modelDir,('SVMfitted_'+dTime+'.sav'))
+modelPath = join(modelDir,('fittedSVM_'+dTime+'.sav')) # join(modelDir,'fittedSVM_10012022.sav')
 model = DataManager.load_obj(modelPath)
 #load CV data
 tmpSaveDir = join(cvDatDir, ('CVjoined_data_'+dTime+'.pkl'))
@@ -75,7 +120,7 @@ plt.show()
 y_score = model.predict_proba(X_test)
 fpr, tpr,_ = roc_curve(y_test, y_score[:,1])
 roc_auc = auc(fpr, tpr)
-ProcessPipe.write_auc(fpr,tpr)
+ProcessPipe.write_auc(fpr,tpr,join(saveBin,f"datAUCROC_{dTime}.csv"))
 #fpr,tpr,roc_auc = SVM.read_auc()
 plt.figure()
 lw = 2
@@ -96,35 +141,14 @@ plt.savefig(join(saveBin,'roc_auc_curve.png'),dpi=200,bbox_inches='tight')
 
 #%% TEST RANDOM IMAGE AND VALIDATE VISUALLY
 #imports
-import localModules.ProcessPipe as ProcessPipe
 #pick a test image
 im_list_test = [0]
 reduceFactor = 2
 #image directory
 im_dir = DataManager.DataMang(folderName)
-X = [] 
-for gen in im_dir.open_dir(im_list_test,'test'):
-    t_start = time.time()
-    image,nW,nH,chan,name,count = gen
-    Test_im = image
-    print('   '+'{}.) Procesing Image : {}'.format(count,name))
-    #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
-    #the notation RGB (0,1,2 respectively))=
-    image = image[:,:,channel]
-    #extract features from image using method(ProcessPipe.feature_extract) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
-    #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    im_segs, bool_segs, domains, paded_im_seg, paded_bool_seg, hog_features = ProcessPipe.feature_extract(image, ff_width, wiener_size, med_size,reduceFactor,False)
-    #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    tmp_X = ProcessPipe.create_data(hog_features,False,bool_segs)
-    X.append(tmp_X)
-    t_end = time.time()
-    print('     '+'Number of Segments : %i'%(len(im_segs)))
-    print('     '+"Processing Time for %s : %0.2f"%(name,(t_end-t_start)))
-#stack X
-X = np.vstack(X)
-#Typing for memory constraints
-X = np.float32(X)
-print('done')
+for i in im_list_test:
+    image, domains = mainLoop(i)
+#endfor
 #%% VISUALIZE & VALIDATE
 predictions = model.predict(X)
 # predict_im = data_to_img(boolim2_2,predictions)

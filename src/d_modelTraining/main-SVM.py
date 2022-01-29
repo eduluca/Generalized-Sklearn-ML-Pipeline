@@ -7,24 +7,27 @@ Created on Wed Jan 13 19:02:19 2021
 """
 #%% IMPORTS
 import time
-from datetime import date
-import multiprocessing as mp
-print("Number of processors: ", mp.cpu_count())
-
 import numpy as np
+import multiprocessing as mp
+import os
+import sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
 from os.path import dirname, join, abspath
 from os import mkdir
-
+from datetime import date
 from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score, GridSearchCV
 from sklearn.pipeline import make_pipeline
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import RobustScaler
 
-import localModules.DataManager as DataManager
+from localPkg.datmgmt import DataManager
 import dill as pickle
 
 #%% PATHS 
+print("Number of processors: ", mp.cpu_count())
 # Path to file
 cfpath = dirname(__file__) 
 # Path to images to be processed
@@ -100,7 +103,7 @@ y_train = y_train.reshape(len(y_train),1)
 y_test = tmpSave[3]
 y_test = y_test.reshape(len(y_test),1)
 X = np.vstack((X_train,X_test))
-y = np.vstack((y_train,y_test)).ravel()
+y = np.ravel(np.vstack((y_train,y_test)))
 print("y_train: " + str(np.unique(y_train)))
 print("y_test: " + str(np.unique(y_test)))
 

@@ -34,11 +34,12 @@ trainDatDir = join(cfpath,"processedData","EL-11122021")
 saveBin = join(cfpath,"saveBin")
 # Path to aggregate data files
 aggDatDir = join(cfpath,"aggregateData")
+savePath = join(aggDatDir,dTime)
 #%% 
-dir = DataManager.DataMang(aggDatDir)
+dir = DataManager.DataMang(savePath)
 files = []
 
-for r,d,f in os.walk(aggDatDir):
+for r,d,f in os.walk(savePath):
     for name in f:
         if name == '_folderLog.txt' or name == 'train-data-ALL':
             continue

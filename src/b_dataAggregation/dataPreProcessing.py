@@ -35,6 +35,8 @@ trainDatDir = join(cfpath,"processedData","EL-11122021")
 saveBin = join(cfpath,"saveBin")
 # Path to aggregate data files
 aggDatDir = join(cfpath,"aggregateData")
+savePath = join(aggDatDir,dTime)
+os.mkdir(savePath)
 #%% Initialize Image Parsing/Pre-Processing 
 #load image folder for training data
 im_dir = DataManager.DataMang(folderName)
@@ -50,6 +52,11 @@ def robust_save(fname):
 def collect_result(result):
     global results
     results.append(result)
+
+def directoryHandler(dirDir):
+    curDir = DataManager.DataMang(folderName)
+    fs = curDir.files
+#enddef
 
 def mainLoop(fileNum):
     global dTime, cfpath, folderName, trainDatDir, saveBin, aggDatDir, im_dir, im_list
@@ -85,7 +92,7 @@ def mainLoop(fileNum):
     t_end = time.time()
     print('     '+'Number of Segments : %i'%(len(im_segs)))
     print('     '+"Processing Time for %s : %0.2f"%(name,(t_end-t_start)))
-    tmpSaveDir = join(aggDatDir, (f'trained_data_{dTime}_{fileNum}.pkl'))
+    tmpSaveDir = join(savePath, (f'trained_data_{dTime}_{fileNum}.pkl'))
     DataManager.save_obj(tmpSaveDir,result)
     return result
     #endfor
@@ -94,17 +101,17 @@ def mainLoop(fileNum):
 if __name__ == '__main__':
     print("Number of processors: ", mp.cpu_count())
     #%% Loop Start - Basic Loop
-    print('Starting PreProcessing Pipeline...')
-    for i in im_list:
-        result = mainLoop(i)
-        break
-    #endfor
+    # print('Starting PreProcessing Pipeline...')
+    # for i in im_list:
+    #     result = mainLoop(i)
+    #     break
+    # #endfor
 
     #%% Loop Start - multiprocessing documentation ex
     #! see. https://docs.python.org/3/library/multiprocessing.html !#
     # mp.set_start_method('spawn')
     # # q = mp.Queue()
-    # p = mp.Process(target = mainLoop, args = (im_list,))
+    # p = mp.Process(target = mainLoop, args = (im_list,))ZbhZ aaaaaaaaaaaaaaaaaaaaaaaaaaaAA   
     # p.start()
     # p.join()
 
@@ -112,15 +119,15 @@ if __name__ == '__main__':
     # import concurrent.futures
     # with concurrent.futures.ProcessPoolExecutor() as executor:
         # executor.map(mainLoop, im_list)
-    #endwith
+    #endwith                        
 
     #%% Loop Start - async-multi processing num. 1
-    # from joblib import Parallel, delayed
-    # threadN = mp.cpu_count()-2
-    # results = Parallel(n_jobs=threadN)(delayed(mainLoop)(i) for i in im_list) # old - del 01/05/2022
+    from joblib import Parallel, delayed
+    threadN = mp.cpu_count()
+    results = Parallel(n_jobs=threadN)(delayed(mainLoop)(i) for i in im_list) # old - del 01/05/2022
 
     #%% Loop Start - async-multi processing num. 2
-    # pool = mp.Pool(mp.cpu_count())   
+    # pool = mp.Pool(mp.cpu_count())
     # #! extract valid data into a neater structure !#
     # tmpDat = results[0]
     # X = []

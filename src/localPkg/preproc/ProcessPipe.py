@@ -7,6 +7,7 @@ Created on Tues Jan 25 19:06:00 2022
 """
 print(__doc__)
 
+from multiprocessing.sharedctypes import Value
 import numpy as np
 import matplotlib.pyplot as plt
 # from sklearn import svm, datasets
@@ -25,18 +26,6 @@ import csv
 from ..datmgmt import DataManager
 from ..disp import LabelMaker
 from ..preproc import Filters
-
-# import xlwings as xw
-
-from IPython import get_ipython
-# plt.rcParams['figure.dpi'] = 100
-# plt.rcParams['figure.figsize'] = (10,10)
-# get_ipython().run_line_magic('matplotlib','qt5')
-
-dirname = os.path.dirname(__file__)
-save_bin = os.path.join(dirname,"save-bin")
-
-global data,labels
 
 def generate_train_sert_ID(boolim,image):
     if type(boolim[0,0]) != np.bool_:
@@ -393,39 +382,58 @@ def _getSmallSquares(seg, nSet):
     padx = 0
     leftOver = []
     subSegs = []
-
     yval = abs(seg[0].stop-seg[0].start)
     xval = abs(seg[1].stop-seg[1].start)
+    tmpy = [slice(0,yval,None)]
+    tmpx = [slice(0,xval,None)]
+    tmpyy = slice(0,yval,None)
+    tmpxx = slice(0,xval,None)
     dify = yval - nSet
     difx = xval - nSet
+    # test if the segment needs to be cut or just taken as is
     if dify < 0 or difx < 0:
         pady  = abs(dify)
         padx  = abs(difx)
-    else:
+        leftOver = [tmpyy,tmpxx]
+    #endif
+    # overwrite axis that is longer than NSET
+    if dify > 0 or difx > 0:
         remy  = yval//nSet
         remx  = xval//nSet
+        difyy = yval - remy*nSet
+        pady  = (nSet - difyy)*(difyy!=0)
+        difxx = xval - remx*nSet
+        padx  = (nSet - difxx)*(difxx!=0)
         if remy > 0:
-            difyy = yval - remy*nSet
-            pady  = nSet - difyy
             cuts = np.arange(0,yval-difyy+1,nSet)
             for i in range(0,remy):
-                tmpy[0].append(slice(cuts[i],cuts[i+1],None))
+                if i == 0:
+                    tmpy[i] = slice(cuts[i],cuts[i+1],None)
+                else:
+                    tmpy.append(slice(cuts[i],cuts[i+1],None))
             #endif
             if difyy > 0:
-                tmpyy[0].append(slice(cuts[i+1],yval,None))
+                tmpy.append(slice(cuts[i+1],yval,None))
             #endif
         #endif
         if remx > 0:
-            difxx = xval - remx*nSet
-            padx = nSet - difxx
             cuts = np.arange(0,xval-difxx+1,nSet)
             for i in range(0,remx):
-                tmpx[1].append(slice(cuts[i],cuts[i+1],None))
+                if i == 0:
+                    tmpx[i] = slice(cuts[i],cuts[i+1],None)
+                else:
+                    tmpx.append(slice(cuts[i],cuts[i+1],None))
             #endif
             if difxx > 0:
-                tmpxx[1].append(slice(cuts[i+1],xval,None))
+                tmpx.append(slice(cuts[i+1],xval,None))
             #endif
         #endif
+        for ydim in tmpy:
+            for xdim in tmpx:
+                subSegs.append((ydim,xdim))
+            #endfor
+        #endfor
+        leftOver = [(tmpyy,tmpxx)]
     #endif
     return subSegs, leftOver, pady, padx
 
@@ -462,20 +470,31 @@ def pad_segs(im_list,bool_list,f,train = True,fill_val = 0):
     # based on the value of reduceN
     NSET = 50
     count = 0
-    newList = []
+    newImList = []
+    newBoolList = []
     
     for seg in f:
         subSegs, leftOver, pady, padx = _getSmallSquares(seg,NSET)
         if len(subSegs) > 0:
             for ss in subSegs:
-                newList.append()
-        if pady != 0 or padx != 0:
-            # Pad image segment on the right edge and bottom edge.
-            newList.append(np.pad(im_list[count],((0,pady),(0,padx)),'constant',constant_values=fill_val))
-            if train:
-                bool_list[count] = np.pad(bool_list[count],((0,pady),(0,padx)),'constant',constant_values=fill_val)
+                yval = abs(ss[0].stop-ss[0].start)
+                xval = abs(ss[1].stop-ss[1].start)
+                if yval < NSET or xval < NSET:
+                    newImList.append(np.pad(im_list[count][ss],((0,NSET-yval),(0,NSET-xval)),'constant',constant_values=fill_val))
+                    if newImList[-1].shape != (NSET,NSET):
+                        ValueError('padded image shape is not square!')
+                    #endif  
+                    if train:
+                        newBoolList.append(np.pad(bool_list[count][ss],((0,NSET-yval),(0,NSET-xval)),'constant',constant_values=fill_val))
+                    #endif
+                else:
+                    newImList.append(im_list[count][ss])
+                    newBoolList.append(bool_list[count][ss])
+            #endfor
+        #endif
         count += 1
-    return newList, bool_list, f
+    #endfor
+    return newImList, newBoolList, f
 
 def downSampleStd(im_list, bool_list, train):
     for i in range(0,len(im_list)):
@@ -494,8 +513,6 @@ def downSampleStd(im_list, bool_list, train):
             # get shape of image
             # nH,nW = bool_list[i].shape
             # determine factor for countless reduction
-            redH = 2 #nH/reduceFactor
-            redW = 2 #nW/reduceFactor
             # countless algorithm
             outIm = Filters.countless(bool_list[i],redH,redW)
             # reassign
@@ -532,7 +549,7 @@ def feature_extract(image, ff_width, wiener_size, med_size,reduceFactor = 2, tra
     #pad segments
     paded_im_seg,paded_bool_seg,_ = pad_segs(im_list,bool_list,f,train,0)
     #generate hog features
-    for seg in im_list:
+    for seg in paded_im_seg:
         normalized = Filters.normalize_img(seg)
         # print(seg.shape) #debug
         testDim = tuple([2*x for x in hog_dim])
@@ -549,7 +566,7 @@ def feature_extract(image, ff_width, wiener_size, med_size,reduceFactor = 2, tra
     tmpInHog = hog_features.copy()
     dsIm_segs, dsBool_segs = downSampleStd(tmpInIm,tmpInBool,train)
     dsHog_segs, _ = downSampleStd(tmpInHog,[],False)
-    return im_list, bool_list, f, dsIm_segs, dsBool_segs, dsHog_segs
+    return paded_im_seg, paded_bool_seg, f, dsIm_segs, dsBool_segs, dsHog_segs
 
 def get_hogs(hog_features):
     hog = []

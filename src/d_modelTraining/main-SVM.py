@@ -146,7 +146,7 @@ pipe_svc.set_params(svc__C =  130,
                     svc__decision_function_shape = 'ovr')
 
 #%% MODEL FITTING
-model = pipe_svc.fit(X_train,y_train,verbose = 5) # Train Model
+model = pipe_svc.fit(X_train,y_train) # Train Model
 y_score = model.decision_function(X_test) # get scores and predictions for test set
 print(model.score(X_test,y_test)) # print roc-auc of model fit
 filename = join(modelDir,('fittedSVM_'+dTime+'.sav'))

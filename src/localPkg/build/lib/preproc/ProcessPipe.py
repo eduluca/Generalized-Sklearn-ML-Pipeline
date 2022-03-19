@@ -6,7 +6,6 @@ Created on Tues Jan 25 19:06:00 2022
 @version: 1.0
 """
 print(__doc__)
-from socket import IP_MULTICAST_LOOP
 import time
 import os
 
@@ -14,6 +13,7 @@ from multiprocessing.sharedctypes import Value
 from xml.dom.expatbuilder import TEXT_NODE
 import numpy as np
 import matplotlib.pyplot as plt
+# from sklearn import svm, datasets
 from skimage.feature import peak_local_max
 from skimage.segmentation import watershed
 from scipy.ndimage import convolve,distance_transform_edt,label, find_objects
@@ -21,9 +21,9 @@ from sklearn.metrics import auc
 from skimage.feature import hog
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch, Rectangle
-from cv2 import rotate, ROTATE_180, ROTATE_90_CLOCKWISE, ROTATE_90_COUNTERCLOCKWISE
 
 import csv
+import localPkg
 
 from ..datmgmt import DataManager
 from ..disp import LabelMaker
@@ -339,7 +339,7 @@ def im_watershed(imageIn,train = True, boolim = np.array([]),multiA=3,multiD=2):
     # get local maxima
     tmplocalMax = peak_local_max(D, min_distance=MIN_DISTANCE,
                               labels=segments)
-    localMax = np.zeros_like(imageIn, dtype=bool)
+    localMax = np.zeros_like(image, dtype=bool)
     localMax[tuple(tmplocalMax.T)] = True
     # label potential segments using distance measures and local maxima
     markers = label(localMax,structure=np.ones((3,3)))[0]
@@ -348,7 +348,7 @@ def im_watershed(imageIn,train = True, boolim = np.array([]),multiA=3,multiD=2):
     f = find_objects(water_im)
     # break up segments into rectangles 
     for seg in f:
-        imList.append(imageIn[seg])
+        im_list.append(image[seg])
         if train:
             boolList.append(boolim[seg])
         #endif
@@ -372,7 +372,7 @@ def _getSmallSquares(seg, nSet):
         DESCRIPTION
 
     """
-    # dispTS()
+    dispTS()
     # pady = 0 
     # padx = 0
     leftOver = []
@@ -430,7 +430,7 @@ def _getSmallSquares(seg, nSet):
         #endfor
         leftOver = [(tmpyy,tmpxx)]
     #endif
-    # dispTS(False,"_getSmallSquares")
+    dispTS(False,"_getSmallSquares")
     return subSegs, leftOver
 
 def pad_segs(imList,boolList,f,train = True,fill_val = 0):
@@ -506,7 +506,7 @@ def downSampleStd(imList, boolList, train=True):
 
     """
     dispTS()
-    for i in range(0,len(imList)):
+    for i in range(0,len(im_list)):
         # reduce image segment using downsampling: figure out how to reduce the image to a specific resolution
         # get shape of image
         # nH,nW = im_list[i].shape
@@ -531,41 +531,13 @@ def downSampleStd(imList, boolList, train=True):
     dispTS(False,"downSampleStd")
     return imList, boolList
 
-def rotateNappend(imList, boolList, train = True):
-    """
-    Summary :
-
-    Parameters
-    ----------
-    
-    Results
-    -------
-
-    """
+def rotateNappend(im_list, bool_list):
     dispTS()
-    imsOut = []
-    boolOut = []
-    for i in range(len(imList)):
-        r1 = rotate(imList[i], ROTATE_180)
-        r2 = rotate(imList[i], ROTATE_90_CLOCKWISE)
-        r3 = rotate(imList[i], ROTATE_90_COUNTERCLOCKWISE)
-        r4 = imList[i]
-        allR = [r1,r2,r3,r4]
-        if train:
-            tmpB = boolList[i]
-            for i in range(0,len(allR)):
-                boolOut.append(tmpB)
-            #endfor
-        #endif
-        for i in range(0,len(allR)):
-            imsOut.append(allR[i])
-        #endfor
-    #endfor
     dispTS(False,"rotateNappend")
-    return imsOut, boolOut
+    pass
 #enddef
 
-def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwargs):
+def feature_extract(image, fftWidth, wieneerWindowSize, medWindowSize, train = True, boolIm = np.array([])):
     """
     SUMMARY : 
 
@@ -588,16 +560,6 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     -------
 
     """
-    train = True
-    boolIm = np.array([])
-    for key, value in kwargs.items():
-        if key == "train":
-            train = value
-        #endif
-        if key == "boolIm":
-            boolIm = value
-        #endif
-    #endfor
 
     dispTS()
     hogFeats = []
@@ -605,7 +567,7 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     HOGDIM = (4,4)
 
     # Normalize image, Hi-pass filter image (using dfft), wiener filter, and median filter (in that order).
-    medIm, _ = filter_pipeline(imageIn,fftWidth,wieneerWindowSize,medWindowSize)
+    medIm, _ = filter_pipeline(image,fftWidth,wieneerWindowSize,medWindowSize)
 
     #segment image using watershed and pad images for resizing
     imList, boolList, f = im_watershed(medIm,train,boolIm)
@@ -613,11 +575,8 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     #pad segments
     padedImSeg, padedBoolSeg, _ = pad_segs(imList,boolList,f,train,0)
 
-    #roate segments and append
-    rotatedIms, rotatedBools = rotateNappend(padedImSeg, padedBoolSeg)
-
     #generate hog features
-    for seg in rotatedIms:
+    for seg in padedImSeg:
         # hogIn = Filters.normalize_img(seg)
         hogIn = seg
         # print(seg.shape) #debug
@@ -637,9 +596,8 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     # dsIm_segs, dsBool_segs = downSampleStd(tmpInIm,tmpInBool,train)
     # dsHog_segs, _ = downSampleStd(tmpInHog,[],False)  
     # dsFeatSets.append(dsImSegs, dsBoolSegs)  
-    
     dispTS(False, "feature_extract")
-    return rotatedIms, rotatedBools, hogFeats, f, dsFeatSets
+    return padedImSeg, padedBoolSeg, f, dsFeatSets
 
 def get_hogs(hogFeats):
     """
@@ -663,7 +621,7 @@ def get_hogs(hogFeats):
     dispTS(False,"get_hogs")
     return hogi
 
-def create_data(datX,imNum,**kwargs):
+def create_data(datX,datY,imNum,train=True):
     """
     Summary :
 
@@ -685,17 +643,7 @@ def create_data(datX,imNum,**kwargs):
     yTrain (IF 'train' == True) : TYPE, list of int
         DESCRIPTION
     """
-    train = True
-    datY = []
-    for key, value in kwargs.items():
-        if key == "train":
-            train = value
-        #endif
-        if key == "datY":
-            datY = value
-        #endif
-    #endfor
-        
+    
     dispTS()
     yTrain = []
     tmpX = []
@@ -733,7 +681,7 @@ def gen_mask(imageIn):
     -------
     np.ma.masked_where(~mask, mask), where mask = image > 0 .
     """
-    mask = imageIn > 0
+    mask = image > 0
     return np.ma.masked_where(~mask, mask)
 
 def overlay_predictions(imageIn, boolIm, predIn, yTest, idxTest, f, saveBin, train=True,**kwargs):
@@ -954,9 +902,8 @@ def random_ind(N, begVal = 0,endVal = 64):
       rndInts.append(random.randint(begVal,endVal))
     return rndInts
 
+### Testing ###
 def mainLoop(fileNum):
-    from datetime import date
-    from os.path import dirname, join, abspath, exists
     #%% Globals
     global dTime, cfpath, folderName, trainDatDir, aggDatDir, savePath
     dTime = date.today().strftime('%d%m%Y')
@@ -964,23 +911,20 @@ def mainLoop(fileNum):
     #%% PATHS 
     # Path to file
     cfpath = dirname(__file__) 
-    aDatGenDir = abspath(join(cfpath,"..","..","a_dataGeneration"))
-    bDatAggDir = abspath(join(cfpath,"..","..","b_dataAggregation"))
     # Path to images to be processed
-    rawDatDir = join(aDatGenDir,"rawData")
+    folderName = abspath(join(cfpath,"..","a_dataGeneration","rawData"))
     # Path to training files
-    trainDatDir = join(bDatAggDir,"processedData","EL-11122021")
+    trainDatDir = join(cfpath,"processedData","EL-11122021")
+    # Path to save bin : saves basic information
+    saveBin = join(cfpath,"saveBin")
     # Path to aggregate data files
-    aggDatDir = join(bDatAggDir,"aggregateData")
+    aggDatDir = join(cfpath,"aggregateData")
     savePath = join(aggDatDir,dTime)
-
-    if not exists(savePath):
-        os.mkdir(savePath)
-    #endif
+    os.mkdir(savePath)
 
     #%% Initialize Image Parsing/Pre-Processing 
     #load image folder for training data
-    imDir = DataManager.DataMang(rawDatDir)
+    imDir = DataManager.DataMang(folderName)
 
     #%% PARAMS
     channel = 2
@@ -988,6 +932,7 @@ def mainLoop(fileNum):
     wienerWindowSize = (5,5)
     medWindowSize = 10
     # seedN = 42
+    reduceFactor = 2
 
     #%% MAIN PROCESS
     dispTS()
@@ -1002,10 +947,10 @@ def mainLoop(fileNum):
     trainBool = LabelMaker.import_train_data(imName,(nH,nW),trainDatDir)
     #extract features from image using method(SVM.filter_pipeline) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    padedImSeg, padedBoolSeg, hogFeats, f, dsFeatSets = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, train = True, boolIm = trainBool)
+    imSegs, boolSegs, _, _, _, hogFeats = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, reduceFactor, True, trainBool)
     chosenFeats = hogFeats
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    result = create_data(chosenFeats,padedBoolSeg,fileNum,True)
+    result = create_data(chosenFeats,boolSegs,fileNum,True)
     
     #%% WRAP-UP MAIN
     dispTS(False)
@@ -1016,67 +961,6 @@ def mainLoop(fileNum):
     #endfor
 #enddef
 
-def mainLoopTest(fileNum):
-    from datetime import date
-    from os.path import dirname, join, abspath, exists
-
-    #%% Globals
-    global dTime, cfpath, folderName, trainDatDir, aggDatDir, savePath
-    dTime = date.today().strftime('%d%m%Y')
-    xOut = []
-    
-    #%% PATHS 
-    # Path to file
-    cfpath = dirname(__file__) 
-    aDatGenDir = abspath(join(cfpath,"..","..","a_dataGeneration"))
-    bDatAggDir = abspath(join(cfpath,"..","..","b_dataAggregation"))
-    # Path to images to be processed
-    rawDatDir = join(aDatGenDir,"rawData")
-    # Path to training files
-    trainDatDir = join(bDatAggDir,"processedData","EL-11122021")
-    # Path to aggregate data files
-    aggDatDir = join(bDatAggDir,"aggregateData")
-    savePath = join(aggDatDir,dTime)
-
-    if not exists(savePath):
-        os.mkdir(savePath)
-    #endif
-
-    #%% Initialize Image Parsing/Pre-Processing 
-    #load image folder for training data
-    imDir = DataManager.DataMang(rawDatDir)
-
-    #%% PARAMS
-    channel = 2
-    fftWidth = 121
-    wienerWindowSize = (5,5)
-    medWindowSize = 10
-
-    dispTS()
-    #opend file
-    imageOut, _, _, _, imName, imNum = imDir.openFileI(fileNum,'test')
-    #load image and its information
-    print('   '+'{}.) Procesing Image : {}'.format(imNum,imName))
-    #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
-    #the notation RGB (0,1,2 respectively))
-    imageIn = imageOut[:,:,channel]
-    #extract features from image using method(ProcessPipe.feature_extract) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
-    #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    _, padedBoolSeg, hogFeats, domains, _ = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize,False)
-    chosenFeats = hogFeats
-    #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    tmpX = create_data(chosenFeats,fileNum,train = False)
-    xOut.append(tmpX)
-
-    dispTS(False)
-    print('     '+'Number of Segments : %i'%(len(chosenFeats)))
-    #stack X
-    xOut = np.vstack(xOut)
-    #endfor
-    return xOut, imageIn, domains
-#enddef
-
-### Testing ###
 if __name__ == '__main__':
     import multiprocessing as mp
     from os.path import join, dirname, abspath

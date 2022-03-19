@@ -21,6 +21,9 @@ import dill as pickle
 
 os.getcwd()
 
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['figure.figsize'] = (10,10)
+get_ipython().run_line_magic('matplotlib','qt5')
 
 class DataMang:
     def __init__(self,dirname):

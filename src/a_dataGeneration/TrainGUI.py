@@ -7,6 +7,10 @@ Created on Mon Apr 13 15:04:48 2020
 
 import time
 import os
+import sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
 import matplotlib.pyplot as plt
 from os.path import join, abspath
 from localPkg.disp import LabelMaker

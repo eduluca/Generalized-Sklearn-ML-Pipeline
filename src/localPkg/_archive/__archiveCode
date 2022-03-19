@@ -1,0 +1,134 @@
+#%% PROCESSPIPE.PY 03/04/2022
+def generate_train_sert_ID(boolim,image):
+    if type(boolim[0,0]) != np.bool_:
+        raise TypeError("args need to be type bool and tuple respectively")
+    'end if'
+    count = 0
+    data = np.zeros((2,boolim.shape[0]*boolim.shape[1]))
+    point_data = np.zeros((2,boolim.shape[0]*boolim.shape[1]))
+    #generate list of points
+    for i,row in enumerate(boolim):
+        for j,col in enumerate(row):
+            if col == True:
+                data[0,count] = image[i,j]
+                data[1,count] = 1
+                point_data[0,count] = i
+                point_data[1,count] = j
+                count+=1
+            else:
+                data[0,count] = image[i,j]
+                data[1,count] = 0
+                point_data[0,count] = i
+                point_data[1,count] = j
+                count+=1
+            'end if'
+        'end for'
+    'end for'
+    return data,point_data
+'end def'
+
+
+def generate_test_sert_ID(boolim,image):
+    if type(boolim[0,0]) != np.bool_:
+        raise TypeError("args need to be type bool and tuple respectively")
+    'end if'
+    count =  0
+    t_data = np.sum(boolim)
+    data = np.zeros((2,t_data))
+    point_data = np.zeros((2,t_data))
+    for i,row in enumerate(boolim):
+        for j,col in enumerate(row):
+            if col == True:
+                data[0,count] = image[i,j]
+                data[1,count] = 0
+                point_data[0,count] = i
+                point_data[1,count] = j
+                count+=1
+    return data,point_data
+'end def'
+
+def get_coef(generator):
+    weights = []
+    for clf in generator:
+        weights.append(clf.coef_)
+    'end for'
+    return weights
+'end def'
+
+def make_meshgrid(x, y, h=.02):
+    """Create a mesh of points to plot in
+
+    Parameters
+    ----------
+    x: data to base x-axis meshgrid on
+    y: data to base y-axis meshgrid on
+    h: stepsize for meshgrid, optional
+
+    Returns
+    -------
+    xx, yy : ndarray
+    """
+    x_min, x_max = x.min() - 1, x.max() + 1
+    y_min, y_max = y.min() - 1, y.max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+    return xx, yy
+
+def plot_contours(ax, clf, xx, yy, **params):
+    """Plot the decision boundaries for a classifier.
+
+    Parameters
+    ----------
+    ax: matplotlib axes object
+    clf: a classifier
+    xx: meshgrid ndarray
+    yy: meshgrid ndarray
+    params: dictionary of params to pass to contourf, optional
+    """
+    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    out = ax.contourf(xx, yy, Z, **params)
+    return out
+
+# @optunity.cross_validated(x=data,y=labels,num_folds=5,regenerate_folds=True)
+# def svm_rbf_tuned_auroc(x_train, y_train, x_test, y_test, logC, logGamma):
+#     model = SVC(C=10**logC,gamma=10**logGamma).fit(x_train,y_train)
+#     decision_values = model.decision_function(x_test)
+#     auc = optunity.metrics.roc_auc(y_test, decision_values)
+#     return auc
+# 'end def'
+
+# def cut_segs(im_list,bool_list,standardDim = 40,train = True):
+#     imOutList = []
+#     boOutList = []
+#     #check dimensions
+#     for k in range(0,len(im_list)):
+#         nH,nW = im_list[k].shape
+#         if nH > standardDim or nW > standardDim:
+#             imOutList.append(im_list[k])
+#             if train:
+#                 boOutList.append(bool_list[k])
+#             #endif
+#             continue
+#         #endif
+#         leftoH = np.arange(0,int(nH/standardDim)*standardDim+1,standardDim) #create cuts for horizontal
+#         leftoW = np.arange(0,int(nW/standardDim)*standardDim+1,standardDim) #create cuts for widths
+#         if nH%standardDim != 0:
+#             leftoH = list(np.append(leftoH,nH-leftoH[-1])) #append leftover
+#         #endif
+#         if nW%standardDim != 0:
+#             leftoW = list(np.append(leftoW,nW-leftoW[-1])) #append leftover
+#         #endif
+#         for i in range(0,len(leftoH)):
+#             h1 = leftoH[i]
+#             h2 = leftoH[i+1]
+#             for j in range(0,len(leftoW)):
+#                 w1 = leftoW[j]
+#                 w2 = leftoW[j+1]
+#                 imOutList.append(im_list[k][h1:h2,w1:w2]) #generate to image list
+#                 if train:
+#                     boOutList.append(bool_list[k][h1:h2,w1:w2]) #generate new bool list
+#             #endfor
+#         #endfor
+#         return imOutList, boOutList
+# #enddef

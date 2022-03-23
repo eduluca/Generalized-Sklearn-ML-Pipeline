@@ -691,12 +691,16 @@ def create_data(datX,imNum,**kwargs):
     """
     train = True
     datY = []
+    domains = []
     for key, value in kwargs.items():
         if key == "train":
             train = value
         #endif
         if key == "datY":
             datY = value
+        #endif
+        if key == "domains":
+            domain = value
         #endif
     #endfor
         
@@ -721,6 +725,9 @@ def create_data(datX,imNum,**kwargs):
         yTrain = np.vstack(yTrain).astype(int)
         imArr = np.tile(imNum,yTrain.shape)
         yTrain = np.hstack((yTrain,imArr))
+        if not domains:
+            yTrain = np.hstack((yTrain,domain))
+        #endif
         return [outX, yTrain]
     #endif
     dispTS(False,"create_data")
@@ -816,6 +823,7 @@ def overlayValidate(imageIn,predictions,domains,saveDir,**kwargs):
         DESCRIPTION.
 
     """
+
     nH= imageIn.shape[0]
     nW= imageIn.shape[1]
     predIm = np.zeros((nH,nW)).astype(np.float32)
@@ -1007,10 +1015,10 @@ def mainLoop(fileNum):
     trainBool = LabelMaker.import_train_data(imName,(nH,nW),trainDatDir)
     #extract features from image using method(SVM.filter_pipeline) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    padedImSeg, padedBoolSeg, hogFeats, domains, dsFeatSets = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, train = True, boolIm = trainBool)
+    padedImSeg, padedBoolSeg, hogFeats, doms, dsFeatSets = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, train = True, boolIm = trainBool)
     chosenFeats = hogFeats
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    result = create_data(chosenFeats,fileNum,datY = padedBoolSeg,Train = True)
+    result = create_data(chosenFeats,fileNum,datY = padedBoolSeg,Train = True, domains = doms)
     
     #%% WRAP-UP MAIN
     dispTS(False)
@@ -1067,10 +1075,10 @@ def mainLoopTest(fileNum):
     imageIn = imageOut[:,:,channel]
     #extract features from image using method(ProcessPipe.feature_extract) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    _, padedBoolSeg, hogFeats, domains, _ = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize,False)
+    _, padedBoolSeg, hogFeats, doms, _ = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize,False)
     chosenFeats = hogFeats
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    tmpX = create_data(chosenFeats,fileNum,train = False)
+    tmpX = create_data(chosenFeats,fileNum,train = False, domains = doms)
     xOut.append(tmpX)
 
     dispTS(False)

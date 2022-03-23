@@ -461,7 +461,8 @@ def pad_segs(imList,boolList,f,train = True,fill_val = 0):
     count = 0
     newImList = []
     newBoolList = []
-    
+    newDoms = []
+
     for seg in f:
         subSegs, _ = _getSmallSquares(seg,NSET)
         if len(subSegs) > 0:
@@ -476,6 +477,7 @@ def pad_segs(imList,boolList,f,train = True,fill_val = 0):
                     if train:
                         newBoolList.append(np.pad(boolList[count][ss],((0,NSET-yval),(0,NSET-xval)),'constant',constant_values=fill_val))
                     #endif
+                    newDoms.append((ss[0],ss[1]))
                 else:
                     newImList.append(imList[count][ss])
                     newBoolList.append(boolList[count][ss])
@@ -484,7 +486,7 @@ def pad_segs(imList,boolList,f,train = True,fill_val = 0):
         count += 1
     #endfor
     dispTS(False,"pad_segs")
-    return newImList, newBoolList, f
+    return newImList, newBoolList, newDoms
 
 def downSampleStd(imList, boolList, train=True):
     """
@@ -611,7 +613,7 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     imList, boolList, f = im_watershed(medIm,train,boolIm)
 
     #pad segments
-    padedImSeg, padedBoolSeg, _ = pad_segs(imList,boolList,f,train,0)
+    padedImSeg, padedBoolSeg, newDoms = pad_segs(imList,boolList,f,train,0)
 
     #roate segments and append
     rotatedIms, rotatedBools = rotateNappend(padedImSeg, padedBoolSeg)
@@ -641,7 +643,7 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     # dsFeatSets.append(dsImSegs, dsBoolSegs)  
     
     dispTS(False, "feature_extract")
-    return rotatedIms, rotatedBools, hogFeats, f, dsFeatSets
+    return rotatedIms, rotatedBools, hogFeats, newDoms, dsFeatSets
 
 def get_hogs(hogFeats):
     """
@@ -1005,7 +1007,7 @@ def mainLoop(fileNum):
     trainBool = LabelMaker.import_train_data(imName,(nH,nW),trainDatDir)
     #extract features from image using method(SVM.filter_pipeline) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    padedImSeg, padedBoolSeg, hogFeats, f, dsFeatSets = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, train = True, boolIm = trainBool)
+    padedImSeg, padedBoolSeg, hogFeats, domains, dsFeatSets = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, train = True, boolIm = trainBool)
     chosenFeats = hogFeats
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
     result = create_data(chosenFeats,fileNum,datY = padedBoolSeg,Train = True)

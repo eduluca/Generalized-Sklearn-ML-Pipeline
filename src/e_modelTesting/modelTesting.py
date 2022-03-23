@@ -48,7 +48,7 @@ wiener_size = (5,5)
 med_size = 10
 start = 0
 count = 42
-dTime = '10012022' #'12242021' #date.today().strftime('%d%m%Y')
+dTime = '03022022' #'12242021' #date.today().strftime('%d%m%Y')
 #%% MODEL TESTING
 #load model
 modelPath = join(modelDir,('fittedSVM_'+dTime+'.sav')) # join(modelDir,'fittedSVM_10012022.sav')
@@ -70,6 +70,8 @@ ax.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
 for i in range(confmat.shape[0]):
     for j in range(confmat.shape[1]):
         ax.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
+    #endfor
+#endfor
 
 plt.xlabel('Predicted label')
 plt.ylabel('True label')

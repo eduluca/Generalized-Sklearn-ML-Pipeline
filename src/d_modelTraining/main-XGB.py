@@ -56,68 +56,6 @@ y = np.vstack((y_train,y_test))
 print("y_train: " + str(np.unique(y_train)))
 print("y_test: " + str(np.unique(y_test)))
 
-
-#%% RANDOM FOREST ALGORITHM 
-print('Random Forest:')
-
-#%% CREATE RANDOMFOREST PIPELINE
-print("starting modeling career...")
-coef = [671,10,68,3,650,87,462]
-RFmodel = RandomForestClassifier(max_depth = coef[0], min_samples_split = coef[1], 
-                                       max_leaf_nodes = coef[2], min_samples_leaf = coef[3],
-                                       n_estimators = coef[4], max_samples = coef[5],
-                                       max_features = coef[6])
-
-#%% MODEL FITTING
-print('fitting...')
-model = RFmodel.fit(X_train,y_train)
-y_score = model.decision_function(X_test)
-print(model.score(X_test,y_test))
-filename = join(modelDir,('fittedRF_'+dTime+'.sav'))
-pickle.dump(model, open(filename, 'wb'))
-print('done')
-
-y_predict = model.predict(X_test)
-y_train_predict = model.predict(X_train)
-print('RF Train accuracy',accuracy_score(y_train, y_train_predict))
-print('RF Test accuracy',accuracy_score(y_test,y_predict))
-
-#%% Cross Validate
-scores = cross_val_score(estimator = model,
-                          X = X,
-                          y = y,
-                          cv = 10,
-                          scoring = 'roc_auc',
-                          verbose = True,
-                          n_jobs=-1)
-
-print('RF CV accuracy scores: %s' % scores)
-print('RF CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores))) 
-
-#Best coefficients so far:
-    #coef = [671,10,68,3,650,87,462]
-
-"""
-#%% SAMPLE CODE FOR OPTIMIZING PARAMETERS
-score = 0.75       
-coef = [671,10,68,3,650,192,462]
-for ii in range(2,500,10): 
-        model = RandomForestClassifier(max_depth = coef[0], min_samples_split = coef[1], 
-                                       max_leaf_nodes = coef[2], min_samples_leaf = coef[3],
-                                       n_estimators = coef[4], max_samples = coef[5],
-                                       max_features = ii)
-        model.fit(X_train,y_train) 
-        y_predict = model.predict(X_test) 
-        y_train_predict = model.predict(X_train)
-        newscore = roc_auc_score(y_test, model.predict_proba(X_test)[:,1])
-        print(ii,newscore, end="")
-        if newscore > score:
-            print(' best so far')
-            score = newscore
-        else:
-            print()
-"""
-
 #%% XGBOOST ALGORITHM 
 print('XGBoost:')
 

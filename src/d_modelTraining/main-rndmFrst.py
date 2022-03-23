@@ -1,32 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Apr 27 20:19:38 2021
-
-@author: jsalm
-"""
-
-# -*- coding: utf-8 -*-
-"""
 Created on Wed Jan 13 19:02:19 2021
 
 @author: jsalm
 """
-from os import mkdir
-from os.path import join, abspath, dirname
 
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
+from os.path import dirname, abspath, join
+from os import mkdir
 import dill as pickle
 
-
+from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import RobustScaler
-from sklearn.metrics import accuracy_score
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import   accuracy_score
+from sklearn.ensemble import  RandomForestClassifier
 
-import src.localModules.ProcessPipe as ProcessPipe
+from xgboost import XGBClassifier
+
 import src.localModules.DataManager as DataManager
 
 #%% PATHS 
@@ -39,7 +30,7 @@ saveBin = join(cfpath,"saveBin")
 # Path to training files
 trainDatDir = abspath(join(cfpath,"..","b_dataAggregation","processedData","EL-11122021"))
 # Path to model
-modelDir = abspath(join(saveBin,"saveKNN"))
+modelDir = abspath(join(saveBin,"saveDT"))
 # Path to cross-validated files
 cvDatDir = abspath(join(cfpath,"..","c_dataValidation","saveBin"))
 # Make directory for saves
@@ -51,7 +42,6 @@ def robust_save(fname):
 #enddef
 
 #%% PARAMS
-param_grid = {'kneighborsclassifier__n_neighbors':[5,7,10,13,15,18,20]}
 dTime = '12242021' #date.today().strftime('%d%m%Y')
 
 #%% Load k-split Data (k=10)
@@ -66,40 +56,24 @@ y = np.vstack((y_train,y_test))
 print("y_train: " + str(np.unique(y_train)))
 print("y_test: " + str(np.unique(y_test)))
 
-#%% Create KNN pipeline
-pipe_knn = make_pipeline(RobustScaler(),KNeighborsClassifier())
 
-#%% SVM MODEL FITTING
-#we create an instance of SVM and fit out data.
+#%% RANDOM FOREST ALGORITHM 
+print('Random Forest:')
+
+#%% CREATE RANDOMFOREST PIPELINE
 print("starting modeling career...")
-
-#%% GRIDSEARCH (IF NECESSARY)
-# gs = GridSearchCV(estimator = pipe_knn,
-#                   param_grid = param_grid,
-#                   scoring = 'roc_auc',
-#                   cv = 5,
-#                   n_jobs = -1,
-#                   verbose = 10)
-
-
-# print("Fitting...")
-# gs = gs.fit(X_train,y_train)
-# print('best score: ' + str(gs.best_score_))
-# print(gs.best_params_)
-# pipe_knn = gs.best_estimator_
-### END Gridsearch ####
-
-#%% SETTING PARAMETERS
-#{'kneighborsclassifier__n_neighbors': 7}
-print('fitting...')
-
-pipe_knn.set_params(kneighborsclassifier__n_neighbors = 7)
+coef = [671,10,68,3,650,87,462]
+RFmodel = RandomForestClassifier(max_depth = coef[0], min_samples_split = coef[1], 
+                                       max_leaf_nodes = coef[2], min_samples_leaf = coef[3],
+                                       n_estimators = coef[4], max_samples = coef[5],
+                                       max_features = coef[6])
 
 #%% MODEL FITTING
-model = pipe_knn.fit(X_train,y_train)
+print('fitting...')
+model = RFmodel.fit(X_train,y_train)
 y_score = model.decision_function(X_test)
 print(model.score(X_test,y_test))
-filename = join(modelDir,('fittedKNN_'+dTime+'.sav'))
+filename = join(modelDir,('fittedRF_'+dTime+'.sav'))
 pickle.dump(model, open(filename, 'wb'))
 print('done')
 
@@ -107,8 +81,9 @@ y_predict = model.predict(X_test)
 y_train_predict = model.predict(X_train)
 print('RF Train accuracy',accuracy_score(y_train, y_train_predict))
 print('RF Test accuracy',accuracy_score(y_test,y_predict))
-#%% CROSS VALIDATE
-scores = cross_val_score(estimator = pipe_knn,
+
+#%% Cross Validate
+scores = cross_val_score(estimator = model,
                           X = X,
                           y = y,
                           cv = 10,
@@ -116,5 +91,29 @@ scores = cross_val_score(estimator = pipe_knn,
                           verbose = True,
                           n_jobs=-1)
 
-print('CV accuracy scores: %s' % scores)
-print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores))) 
+print('RF CV accuracy scores: %s' % scores)
+print('RF CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores))) 
+
+#Best coefficients so far:
+    #coef = [671,10,68,3,650,87,462]
+
+"""
+#%% SAMPLE CODE FOR OPTIMIZING PARAMETERS
+score = 0.75       
+coef = [671,10,68,3,650,192,462]
+for ii in range(2,500,10): 
+        model = RandomForestClassifier(max_depth = coef[0], min_samples_split = coef[1], 
+                                       max_leaf_nodes = coef[2], min_samples_leaf = coef[3],
+                                       n_estimators = coef[4], max_samples = coef[5],
+                                       max_features = ii)
+        model.fit(X_train,y_train) 
+        y_predict = model.predict(X_test) 
+        y_train_predict = model.predict(X_train)
+        newscore = roc_auc_score(y_test, model.predict_proba(X_test)[:,1])
+        print(ii,newscore, end="")
+        if newscore > score:
+            print(' best so far')
+            score = newscore
+        else:
+            print()
+"""

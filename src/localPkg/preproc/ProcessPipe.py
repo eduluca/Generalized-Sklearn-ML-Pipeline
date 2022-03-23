@@ -481,6 +481,7 @@ def pad_segs(imList,boolList,f,train = True,fill_val = 0):
                 else:
                     newImList.append(imList[count][ss])
                     newBoolList.append(boolList[count][ss])
+                    newDoms.append((ss[0],ss[1]))
             #endfor
         #endif
         count += 1
@@ -1018,7 +1019,7 @@ def mainLoop(fileNum):
     padedImSeg, padedBoolSeg, hogFeats, doms, dsFeatSets = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, train = True, boolIm = trainBool)
     chosenFeats = hogFeats
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    result = create_data(chosenFeats,fileNum,datY = padedBoolSeg,Train = True, domains = doms)
+    result = create_data(chosenFeats,fileNum,datY = padedBoolSeg,Train = True)
     
     #%% WRAP-UP MAIN
     dispTS(False)
@@ -1086,7 +1087,7 @@ def mainLoopTest(fileNum):
     #stack X
     xOut = np.vstack(xOut)
     #endfor
-    return xOut, imageIn, domains
+    return xOut, imageIn, doms
 #enddef
 
 ### Testing ###

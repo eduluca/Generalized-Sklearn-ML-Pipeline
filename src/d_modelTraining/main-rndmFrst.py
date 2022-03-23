@@ -6,6 +6,13 @@ Created on Wed Jan 13 19:02:19 2021
 """
 
 import numpy as np
+import multiprocessing as mp
+import os
+import sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+import numpy as np
 import matplotlib.pyplot as plt
 from os.path import dirname, abspath, join
 from os import mkdir
@@ -18,7 +25,7 @@ from sklearn.ensemble import  RandomForestClassifier
 
 from xgboost import XGBClassifier
 
-import src.localModules.DataManager as DataManager
+import localPkg.datamgmt as DataManager
 
 #%% PATHS 
 # Path to file

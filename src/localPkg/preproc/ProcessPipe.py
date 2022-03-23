@@ -31,7 +31,7 @@ from ..preproc import Filters
 
 
 
-def dispTS(startFunc = True, dispTitle = "Processing..."):
+def dispTS(startFunc = True, dispTitle = ""):
     """
     Summary : displays time stamp for when the function is first called to when its next called.
     Parameters
@@ -52,7 +52,7 @@ def dispTS(startFunc = True, dispTitle = "Processing..."):
         outStr = f"{dispTitle}"
     else:
         tEnd = time.time()
-        if dispTitle == "Processing...":
+        if dispTitle == "":
             dispTitle = "DONE!"
         else:
             dispTitle = f"{dispTitle} done."
@@ -257,7 +257,7 @@ def filter_pipeline(image,fftWidth,wienerWindowSize,medianWindowSize,multiA=1,mu
         DESCRIPTION.
 
     """
-    dispTS()
+    dispTS("")
     directionFeats = np.array([])
 
     #Normalize image
@@ -325,7 +325,7 @@ def im_watershed(imageIn,train = True, boolim = np.array([]),multiA=3,multiD=2):
         DESCRIPTION
 
     """
-    dispTS()
+    dispTS("")
     MIN_DISTANCE = 20
     imList = []
     boolList = []
@@ -617,6 +617,7 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     rotatedIms, rotatedBools = rotateNappend(padedImSeg, padedBoolSeg)
 
     #generate hog features
+    dispTS('appending hogs...')
     for seg in rotatedIms:
         # hogIn = Filters.normalize_img(seg)
         hogIn = seg
@@ -629,6 +630,7 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
         #endif
         hogFeats.append(hogi[1]) #grab the array from hog() output
     #endfor
+    dispTS('hogs appended.')
 
     #downsample feature sets (optional)
     # tmpInIm = padedImSeg.copy()
@@ -706,6 +708,7 @@ def create_data(datX,imNum,**kwargs):
             tmpX = get_hogs(datX)
         #endtry
     #endfor
+
     outX = np.vstack(tmpX)
     if train:
         for i in range(0,len(datY)):
@@ -1005,7 +1008,7 @@ def mainLoop(fileNum):
     padedImSeg, padedBoolSeg, hogFeats, f, dsFeatSets = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, train = True, boolIm = trainBool)
     chosenFeats = hogFeats
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    result = create_data(chosenFeats,padedBoolSeg,fileNum,True)
+    result = create_data(chosenFeats,fileNum,datY = padedBoolSeg,Train = True)
     
     #%% WRAP-UP MAIN
     dispTS(False)

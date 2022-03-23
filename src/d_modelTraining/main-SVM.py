@@ -48,13 +48,7 @@ except FileExistsError:
 #endtry
 #%% Script Params
 # PARMS
-channel = 2
-ff_width = 121
-wiener_size = (5,5)
-med_size = 10
-start = 0
-count = 42
-dTime = '10012022' #date.today().strftime('%d%m%Y')
+dTime = '19032022' #date.today().strftime('%d%m%Y')
 #%% GRIDSEARCH PARAMS
 
 # param_range = [0.0001,0.001,0.01,0.1,1,10,100,1000]
@@ -108,7 +102,7 @@ print("y_train: " + str(np.unique(y_train)))
 print("y_test: " + str(np.unique(y_test)))
 
 #%% Create SVM Pipeline
-pipe_svc = make_pipeline(RobustScaler(),SVC())
+pipe_svc = make_pipeline(RobustScaler(),SVC(),verbose=True)
 
 #%% SVM MODEL FITTING
 # Create an instance of SVM and fit out data.
@@ -147,11 +141,17 @@ pipe_svc.set_params(svc__C =  130,
 
 #%% MODEL FITTING
 model = pipe_svc.fit(X_train,y_train) # Train Model
+print('done fitting.')
+#%% MODEL EVALUATION
+print('evaluating...')
 y_score = model.decision_function(X_test) # get scores and predictions for test set
 print(model.score(X_test,y_test)) # print roc-auc of model fit
+print('done evaluating.')
+#%% MODEL SAVE
+print('saving...')
 filename = join(modelDir,('fittedSVM_'+dTime+'.sav'))
 pickle.dump(model, open(filename, 'wb'))
-print('done')
+print('done.')
 
 y_predict = model.predict(X_test)
 y_train_predict = model.predict(X_train)

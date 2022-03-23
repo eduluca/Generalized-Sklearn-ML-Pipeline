@@ -125,7 +125,7 @@ if __name__ == '__main__':
     # import concurrent.futures
     # with concurrent.futures.ProcessPoolExecutor() as executor:
         # executor.map(mainLoop, im_list)
-    #endwith                        
+    #endwith       
 
     #%% Loop Start - async-multi processing num. 1
     from joblib import Parallel, delayed

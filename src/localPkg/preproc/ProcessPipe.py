@@ -534,7 +534,7 @@ def downSampleStd(imList, boolList, train=True):
     dispTS(False,"downSampleStd")
     return imList, boolList
 
-def rotateNappend(imList, boolList, train = True):
+def rotateNappend(imList, boolList, domains, train = True):
     """
     Summary :
 
@@ -548,6 +548,7 @@ def rotateNappend(imList, boolList, train = True):
     dispTS()
     imsOut = []
     boolOut = []
+    domsOut = []
     for i in range(len(imList)):
         r1 = rotate(imList[i], ROTATE_180)
         r2 = rotate(imList[i], ROTATE_90_CLOCKWISE)
@@ -556,12 +557,13 @@ def rotateNappend(imList, boolList, train = True):
         allR = [r1,r2,r3,r4]
         if train:
             tmpB = boolList[i]
-            for i in range(0,len(allR)):
+            for j in range(0,len(allR)):
                 boolOut.append(tmpB)
             #endfor
         #endif
-        for i in range(0,len(allR)):
-            imsOut.append(allR[i])
+        for j in range(0,len(allR)):
+            imsOut.append(allR[j])
+            domsOut.append(domains[i])
         #endfor
     #endfor
     dispTS(False,"rotateNappend")
@@ -701,7 +703,7 @@ def create_data(datX,imNum,**kwargs):
             datY = value
         #endif
         if key == "domains":
-            domain = value
+            domains = value
         #endif
     #endfor
         
@@ -726,8 +728,8 @@ def create_data(datX,imNum,**kwargs):
         yTrain = np.vstack(yTrain).astype(int)
         imArr = np.tile(imNum,yTrain.shape)
         yTrain = np.hstack((yTrain,imArr))
-        if not domains:
-            yTrain = np.hstack((yTrain,domain))
+        if domains:
+            yTrain = np.hstack((yTrain,domains))
         #endif
         return [outX, yTrain]
     #endif
@@ -1008,7 +1010,7 @@ def mainLoop(fileNum):
     #opend filfe
     imageOut,nW,nH,_,imName,imNum = imDir.openFileI(fileNum,'train')
     #load image and its information
-    print('   '+'{}.) Procesing Image : {}'.format(imNum,imName))
+    print('   '+'{}.) Processing Image : {}'.format(imNum,imName))
     #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
     #the notation RGB (0,1,2 respectively))=
     imageIn = imageOut[:,:,channel]
@@ -1019,7 +1021,7 @@ def mainLoop(fileNum):
     padedImSeg, padedBoolSeg, hogFeats, doms, dsFeatSets = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, train = True, boolIm = trainBool)
     chosenFeats = hogFeats
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    result = create_data(chosenFeats,fileNum,datY = padedBoolSeg,Train = True)
+    result = create_data(chosenFeats,fileNum,datY = padedBoolSeg,Train = True,domains=doms)
     
     #%% WRAP-UP MAIN
     dispTS(False)

@@ -25,7 +25,7 @@ from sklearn.ensemble import  RandomForestClassifier
 
 from xgboost import XGBClassifier
 
-import localPkg.datamgmt as DataManager
+import localPkg.datmgmt as DataManager
 
 #%% PATHS 
 # Path to file
@@ -41,7 +41,11 @@ modelDir = abspath(join(saveBin,"saveDT"))
 # Path to cross-validated files
 cvDatDir = abspath(join(cfpath,"..","c_dataValidation","saveBin"))
 # Make directory for saves
-mkdir(abspath(join(modelDir)))
+try:
+    mkdir(abspath(join(modelDir)))
+except FileExistsError:
+  print('Save folder for model already exists!')
+#endtry
 
 #%% DEFINITIONS & PARAMS
 def robust_save(fname):

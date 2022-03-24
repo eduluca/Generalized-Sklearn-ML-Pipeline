@@ -21,7 +21,7 @@ from localPkg.preproc import ProcessPipe
 from localPkg.datmgmt import DataManager
 from localPkg.disp import LabelMaker
 #%% Globals
-dTime = date.today().strftime('%d%m%Y')
+dTime = '03022022' #date.today().strftime('%d%m%Y')
 results = []
 #%% PATHS 
 # Path to file

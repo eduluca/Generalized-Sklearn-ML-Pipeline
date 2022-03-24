@@ -54,7 +54,7 @@ wiener_size = (5,5)
 med_size = 10
 start = 0
 count = 42
-dTime = '10012022' #date.today().strftime('%d%m%Y')
+dTime = '03022022' #date.today().strftime('%d%m%Y')
 #%% GRIDSEARCH PARAMS
 
 # param_range = [0.0001,0.001,0.01,0.1,1,10,100,1000]
@@ -108,7 +108,7 @@ print("y_train: " + str(np.unique(y_train)))
 print("y_test: " + str(np.unique(y_test)))
 
 #%% Create SVM Pipeline
-pipe_svc = make_pipeline(RobustScaler(),SVC())
+pipe_svc = make_pipeline(RobustScaler(),SVC(),verbose=True)
 
 #%% SVM MODEL FITTING
 # Create an instance of SVM and fit out data.

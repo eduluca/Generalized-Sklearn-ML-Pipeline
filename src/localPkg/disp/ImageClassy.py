@@ -1,24 +1,26 @@
 
 class ImageClassificate:
-    def __init__(self, imageIn):
+    def __init__(self, imagePath):
         ##% PRIMARY INFORMATION
-        self.image = imageIn # np.array() of image input
-        self.shape = imageIn.__getShape() # 
-        self.muNstd = imageIn.__getMeanStd()
+        self.imagePath = imagePath # np.array() of image input
+        imageIn = __loadImage(imagePath)
+        self.shape = imageIn._getShape() # tuple of the shape of the image (heightxwidth)
+        self.muNstd = imageIn._getMeanStd() # mean and standard deviation of the image data
         #%% SECONDARY INFORMATION
         self.imageSegments = []
         self.imageLabels = []
         self.filterOrder = []
     #enddef
-    def __loadImage():
-        pass
+
+    def __loadImage(imagePath):
+        
     #enddef
-    
-    def __getShape():
+
+    def _getShape():
         pass
     #enddef 
 
-    def __getMeanStd():
+    def _getMeanStd():
         pass
     #enddef
 

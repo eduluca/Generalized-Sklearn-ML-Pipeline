@@ -6,6 +6,13 @@ Created on Wed Jan 13 19:02:19 2021
 """
 
 import numpy as np
+import multiprocessing as mp
+import os
+import sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+import numpy as np
 import matplotlib.pyplot as plt
 from os.path import dirname, abspath, join
 from os import mkdir
@@ -18,7 +25,7 @@ from sklearn.ensemble import  RandomForestClassifier
 
 from xgboost import XGBClassifier
 
-import src.localModules.DataManager as DataManager
+import localPkg.datamgmt as DataManager
 
 #%% PATHS 
 # Path to file
@@ -56,64 +63,64 @@ y = np.vstack((y_train,y_test))
 print("y_train: " + str(np.unique(y_train)))
 print("y_test: " + str(np.unique(y_test)))
 
-#%% XGBOOST ALGORITHM 
-print('XGBoost:')
 
-##XGBoost with Optimal HyperParameters
+#%% RANDOM FOREST ALGORITHM 
+print('Random Forest:')
+
+#%% CREATE RANDOMFOREST PIPELINE
 print("starting modeling career...")
-coef = [2,0.28,150,0.57,0.36,0.1,1,0,0.75,0.42]
-XGBmodel = XGBClassifier(max_depth = coef[0],subsample = coef[1],n_estimators = coef[2],
-                      colsample_bylevel = coef[3], colsample_bytree = coef[4],learning_rate=coef[5], 
-                      min_child_weight = coef[6], random_state = coef[7],reg_alpha = coef[8],
-                      reg_lambda = coef[9])
-
+coef = [671,10,68,3,650,87,462]
+RFmodel = RandomForestClassifier(max_depth = coef[0], min_samples_split = coef[1], 
+                                       max_leaf_nodes = coef[2], min_samples_leaf = coef[3],
+                                       n_estimators = coef[4], max_samples = coef[5],
+                                       max_features = coef[6])
 
 #%% MODEL FITTING
 print('fitting...')
-model = XGBmodel.fit(X_train,y_train)
+model = RFmodel.fit(X_train,y_train)
 y_score = model.decision_function(X_test)
 print(model.score(X_test,y_test))
-filename = join(modelDir,('fittedXGB_'+dTime+'.sav'))
+filename = join(modelDir,('fittedRF_'+dTime+'.sav'))
 pickle.dump(model, open(filename, 'wb'))
 print('done')
 
 y_predict = model.predict(X_test)
 y_train_predict = model.predict(X_train)
-print('XGB Train accuracy',accuracy_score(y_train, y_train_predict))
-print('XGB Test accuracy',accuracy_score(y_test,y_predict))
+print('RF Train accuracy',accuracy_score(y_train, y_train_predict))
+print('RF Test accuracy',accuracy_score(y_test,y_predict))
 
-#%% CROSS VALIDATE k-fold (k=10)
+#%% Cross Validate
 scores = cross_val_score(estimator = model,
-                          X = X_train,
-                          y = y_train,
+                          X = X,
+                          y = y,
                           cv = 10,
                           scoring = 'roc_auc',
                           verbose = True,
                           n_jobs=-1)
 
-print('XGB CV accuracy scores: %s' % scores)
-print('XGB CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores))) 
-        
+print('RF CV accuracy scores: %s' % scores)
+print('RF CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores))) 
+
 #Best coefficients so far:
-    #coef = [2,0.28,150,0.57,0.36,0.1,1,0,0.75,0.42]
+    #coef = [671,10,68,3,650,87,462]
 
 """
 #%% SAMPLE CODE FOR OPTIMIZING PARAMETERS
-score = 0.7159090909090909       
-coef = [2,0.4,150,.8,1,.1,1,0,1,0.5]
-for ii in range(2,31): 
-    model = XGBClassifier(max_depth = ii,subsample = coef[1],n_estimators = coef[2],
-                        colsample_bylevel = coef[3], colsample_bytree = coef[4],learning_rate=coef[5], 
-                        min_child_weight = coef[6], random_state = coef[7],reg_alpha = coef[8],
-                        reg_lambda = coef[9])
-    model.fit(X_train,y_train) 
-    y_predict = model.predict(X_test) 
-    y_train_predict = model.predict(X_train)
-    newscore = roc_auc_score(y_test, model.predict_proba(X_test)[:,1])
-    print(ii,newscore, end="")
-    if newscore > score:
-        print(' best so far')
-        score = newscore
-    else:
-        print()
+score = 0.75       
+coef = [671,10,68,3,650,192,462]
+for ii in range(2,500,10): 
+        model = RandomForestClassifier(max_depth = coef[0], min_samples_split = coef[1], 
+                                       max_leaf_nodes = coef[2], min_samples_leaf = coef[3],
+                                       n_estimators = coef[4], max_samples = coef[5],
+                                       max_features = ii)
+        model.fit(X_train,y_train) 
+        y_predict = model.predict(X_test) 
+        y_train_predict = model.predict(X_train)
+        newscore = roc_auc_score(y_test, model.predict_proba(X_test)[:,1])
+        print(ii,newscore, end="")
+        if newscore > score:
+            print(' best so far')
+            score = newscore
+        else:
+            print()
 """

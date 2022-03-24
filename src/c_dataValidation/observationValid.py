@@ -19,6 +19,7 @@ from os.path import dirname, join, abspath
 from datetime import date
 from sklearn.model_selection import train_test_split
 from localPkg.datmgmt import DataManager
+from localPkg.preproc.ProcessPipe import overlayValidate
 
 #%% PATHS 
 print("Number of processors: ", mp.cpu_count())
@@ -69,3 +70,9 @@ print('     '+"y_train: " + str(np.unique(y_train)))
 print('     '+"y_test: " + str(np.unique(y_test)))
 
 #%%
+im_list = [3,4,5,6,10,12,13,14,21,26,27,28,29,35]
+imDir = DataManager.DataMang(folderName)
+fileNum = im_list[1]
+predictions = y[(y[:,1] ==  fileNum),0]
+imageOut,nW,nH,_,imName,imNum = imDir.openFileI(fileNum,'train')
+overlayValidate(imageOut,predictions,,saveBin)

@@ -26,8 +26,8 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors import KNeighborsClassifier
 
-import src.localModules.ProcessPipe as ProcessPipe
-import src.localModules.DataManager as DataManager
+import localPkg.preproc as ProcessPipe
+import localPkg.datmgmt as DataManager
 
 #%% PATHS 
 # Path to file
@@ -99,7 +99,7 @@ pipe_knn.set_params(kneighborsclassifier__n_neighbors = 7)
 model = pipe_knn.fit(X_train,y_train)
 y_score = model.decision_function(X_test)
 print(model.score(X_test,y_test))
-filename = join(modelDir,('fitted_'+dTime+'.sav'))
+filename = join(modelDir,('fittedKNN_'+dTime+'.sav'))
 pickle.dump(model, open(filename, 'wb'))
 print('done')
 

@@ -44,7 +44,7 @@ for r,d,f in os.walk(savePath):
         if name == '_folderLog.txt' or name == 'train-data-ALL':
             continue
         #endif
-        print(join(r,name))
+        print(f"adding: {join(r,name)}")
         files.append(DataManager.load_obj(join(r,name)))
     #endfor
 #endfor

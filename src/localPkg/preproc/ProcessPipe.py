@@ -31,7 +31,7 @@ from ..preproc import Filters
 
 
 
-def dispTS(startFunc = True, dispTitle = "Processing..."):
+def dispTS(startFunc = True, dispTitle = ""):
     """
     Summary : displays time stamp for when the function is first called to when its next called.
     Parameters
@@ -52,7 +52,7 @@ def dispTS(startFunc = True, dispTitle = "Processing..."):
         outStr = f"{dispTitle}"
     else:
         tEnd = time.time()
-        if dispTitle == "Processing...":
+        if dispTitle == "":
             dispTitle = "DONE!"
         else:
             dispTitle = f"{dispTitle} done."
@@ -257,7 +257,7 @@ def filter_pipeline(image,fftWidth,wienerWindowSize,medianWindowSize,multiA=1,mu
         DESCRIPTION.
 
     """
-    dispTS()
+    dispTS("")
     directionFeats = np.array([])
 
     #Normalize image
@@ -325,7 +325,7 @@ def im_watershed(imageIn,train = True, boolim = np.array([]),multiA=3,multiD=2):
         DESCRIPTION
 
     """
-    dispTS()
+    dispTS("")
     MIN_DISTANCE = 20
     imList = []
     boolList = []
@@ -461,7 +461,8 @@ def pad_segs(imList,boolList,f,train = True,fill_val = 0):
     count = 0
     newImList = []
     newBoolList = []
-    
+    newDoms = []
+
     for seg in f:
         subSegs, _ = _getSmallSquares(seg,NSET)
         if len(subSegs) > 0:
@@ -476,15 +477,17 @@ def pad_segs(imList,boolList,f,train = True,fill_val = 0):
                     if train:
                         newBoolList.append(np.pad(boolList[count][ss],((0,NSET-yval),(0,NSET-xval)),'constant',constant_values=fill_val))
                     #endif
+                    newDoms.append((ss[0],ss[1]))
                 else:
                     newImList.append(imList[count][ss])
                     newBoolList.append(boolList[count][ss])
+                    newDoms.append((ss[0],ss[1]))
             #endfor
         #endif
         count += 1
     #endfor
     dispTS(False,"pad_segs")
-    return newImList, newBoolList, f
+    return newImList, newBoolList, newDoms
 
 def downSampleStd(imList, boolList, train=True):
     """
@@ -611,12 +614,13 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     imList, boolList, f = im_watershed(medIm,train,boolIm)
 
     #pad segments
-    padedImSeg, padedBoolSeg, _ = pad_segs(imList,boolList,f,train,0)
+    padedImSeg, padedBoolSeg, newDoms = pad_segs(imList,boolList,f,train,0)
 
     #roate segments and append
     rotatedIms, rotatedBools = rotateNappend(padedImSeg, padedBoolSeg)
 
     #generate hog features
+    dispTS('appending hogs...')
     for seg in rotatedIms:
         # hogIn = Filters.normalize_img(seg)
         hogIn = seg
@@ -629,6 +633,7 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
         #endif
         hogFeats.append(hogi[1]) #grab the array from hog() output
     #endfor
+    dispTS('hogs appended.')
 
     #downsample feature sets (optional)
     # tmpInIm = padedImSeg.copy()
@@ -639,7 +644,7 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     # dsFeatSets.append(dsImSegs, dsBoolSegs)  
     
     dispTS(False, "feature_extract")
-    return rotatedIms, rotatedBools, hogFeats, f, dsFeatSets
+    return rotatedIms, rotatedBools, hogFeats, newDoms, dsFeatSets
 
 def get_hogs(hogFeats):
     """
@@ -687,12 +692,16 @@ def create_data(datX,imNum,**kwargs):
     """
     train = True
     datY = []
+    domains = []
     for key, value in kwargs.items():
         if key == "train":
             train = value
         #endif
         if key == "datY":
             datY = value
+        #endif
+        if key == "domains":
+            domain = value
         #endif
     #endfor
         
@@ -706,6 +715,7 @@ def create_data(datX,imNum,**kwargs):
             tmpX = get_hogs(datX)
         #endtry
     #endfor
+
     outX = np.vstack(tmpX)
     if train:
         for i in range(0,len(datY)):
@@ -716,6 +726,9 @@ def create_data(datX,imNum,**kwargs):
         yTrain = np.vstack(yTrain).astype(int)
         imArr = np.tile(imNum,yTrain.shape)
         yTrain = np.hstack((yTrain,imArr))
+        if not domains:
+            yTrain = np.hstack((yTrain,domain))
+        #endif
         return [outX, yTrain]
     #endif
     dispTS(False,"create_data")
@@ -811,6 +824,7 @@ def overlayValidate(imageIn,predictions,domains,saveDir,**kwargs):
         DESCRIPTION.
 
     """
+
     nH= imageIn.shape[0]
     nW= imageIn.shape[1]
     predIm = np.zeros((nH,nW)).astype(np.float32)
@@ -1002,10 +1016,10 @@ def mainLoop(fileNum):
     trainBool = LabelMaker.import_train_data(imName,(nH,nW),trainDatDir)
     #extract features from image using method(SVM.filter_pipeline) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    padedImSeg, padedBoolSeg, hogFeats, f, dsFeatSets = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, train = True, boolIm = trainBool)
+    padedImSeg, padedBoolSeg, hogFeats, doms, dsFeatSets = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize, train = True, boolIm = trainBool)
     chosenFeats = hogFeats
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    result = create_data(chosenFeats,padedBoolSeg,fileNum,True)
+    result = create_data(chosenFeats,fileNum,datY = padedBoolSeg,Train = True)
     
     #%% WRAP-UP MAIN
     dispTS(False)
@@ -1062,10 +1076,10 @@ def mainLoopTest(fileNum):
     imageIn = imageOut[:,:,channel]
     #extract features from image using method(ProcessPipe.feature_extract) then watershed data useing thresholding algorithm (work to be done here...) to segment image.
     #Additionally, extract filtered image data and hog_Features from segmented image. (will also segment train image if training model) 
-    _, padedBoolSeg, hogFeats, domains, _ = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize,False)
+    _, padedBoolSeg, hogFeats, doms, _ = feature_extract(imageIn, fftWidth, wienerWindowSize, medWindowSize,False)
     chosenFeats = hogFeats
     #choose which data you want to merge together to train SVM. Been using my own filter, but could also use hog_features.
-    tmpX = create_data(chosenFeats,fileNum,train = False)
+    tmpX = create_data(chosenFeats,fileNum,train = False, domains = doms)
     xOut.append(tmpX)
 
     dispTS(False)
@@ -1073,7 +1087,7 @@ def mainLoopTest(fileNum):
     #stack X
     xOut = np.vstack(xOut)
     #endfor
-    return xOut, imageIn, domains
+    return xOut, imageIn, doms
 #enddef
 
 ### Testing ###

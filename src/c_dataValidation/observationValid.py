@@ -17,7 +17,6 @@ import numpy as np
 
 from os.path import dirname, join, abspath
 from datetime import date
-from sklearn.model_selection import train_test_split
 from localPkg.datmgmt import DataManager
 from localPkg.preproc.ProcessPipe import overlayValidate
 
@@ -44,35 +43,36 @@ X = tmpDat[0]
 y = tmpDat[1]
 # del tmpDat
 #%% Train-Test Split
-print('Splitting Data...')
-#stack X and y
-X = np.vstack(X)
-y = np.vstack(y)
-#Typing for memory constraints
-X = np.float64(X)
-y = np.int16(y)
-#adding in some refence numbers for later
-idx = np.array([[i for i in range(0,len(y))]]).T
-y = np.hstack((y,idx))
-#split dataset
-X_train, X_test, y_train, y_test = train_test_split(X,y,
-                                                        test_size=0.3,
-                                                        shuffle=True,
-                                                        random_state=count)
-ind_train = y_train[:,1]
-ind_test = y_test[:,1]
-y_train = y_train[:,0]
-y_test = y_test[:,0]
-# Print train-test characteristics
-print('   '+"Training Data (N): " + str(len(y_train)))
-print('     '+"Testing Data (N): " + str(len(y_test)))
-print('     '+"y_train: " + str(np.unique(y_train)))
-print('     '+"y_test: " + str(np.unique(y_test)))
+# print('Splitting Data...')
+# #stack X and y
+# X = np.vstack(X)
+# y = np.vstack(y)
+# #Typing for memory constraints
+# X = np.float64(X)
+# y = np.int16(y)
+# #adding in some refence numbers for later
+# idx = np.array([[i for i in range(0,len(y))]]).T
+# y = np.hstack((y,idx))
+# #split dataset
+# X_train, X_test, y_train, y_test = train_test_split(X,y,
+#                                                         test_size=0.3,
+#                                                         shuffle=True,
+#                                                         random_state=count)
+# ind_train = y_train[:,1]
+# ind_test = y_test[:,1]
+# y_train = y_train[:,0]
+# y_test = y_test[:,0]
+# # Print train-test characteristics
+# print('   '+"Training Data (N): " + str(len(y_train)))
+# print('     '+"Testing Data (N): " + str(len(y_test)))
+# print('     '+"y_train: " + str(np.unique(y_train)))
+# print('     '+"y_test: " + str(np.unique(y_test)))
 
 #%%
 im_list = [3,4,5,6,10,12,13,14,21,26,27,28,29,35]
 imDir = DataManager.DataMang(folderName)
 fileNum = im_list[1]
-predictions = y[(y[:,1] ==  fileNum),0]
+predictions = y[fileNum][:,0]
+domains = y[fileNum][:,2]
 imageOut,nW,nH,_,imName,imNum = imDir.openFileI(fileNum,'train')
 overlayValidate(imageOut,predictions,domains,saveBin)

@@ -40,7 +40,7 @@ wiener_size = (5,5)
 med_size = 10
 start = 0
 count = 42
-dTime = date.today().strftime('%d%m%Y')
+dTime = '24032022' #date.today().strftime('%d%m%Y')
 #%% Load Data
 print('Loading Data...')
 tmpLoadDir = join(aggDatDir, 'train-data-ALL.pkl') #join(aggDatDir, ('joined_data_'+dTime+'.pkl'))
@@ -58,10 +58,10 @@ X = np.vstack(X)
 y = np.vstack(y)
 #Typing for memory constraints
 X = np.float64(X)
-y = np.int16(y)
+# y = np.int16(y)
 #adding in some refence numbers for later
-idx = np.array([[i for i in range(0,len(y))]]).T
-y = np.hstack((y,idx))
+# idx = np.array([[i for i in range(0,len(y))]]).T
+# y = np.hstack((y,idx))
 #split dataset
 X_train, X_test, y_train, y_test = train_test_split(X,y,
                                                         test_size=0.3,
@@ -77,6 +77,6 @@ print('     '+"Testing Data (N): " + str(len(y_test)))
 print('     '+"y_train: " + str(np.unique(y_train)))
 print('     '+"y_test: " + str(np.unique(y_test)))
 
-tmpDat = [X_train,X_test,y_train,y_test]
+tmpDat = [X_train,X_test,y_train,y_test,ind_train,ind_test]
 tmpSaveDir = join(saveBin, ('CVjoined_data_'+dTime+'.pkl'))
 DataManager.save_obj(tmpSaveDir,tmpDat)

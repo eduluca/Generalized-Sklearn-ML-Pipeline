@@ -37,7 +37,7 @@ saveBin = join(cfpath,"saveBin")
 # Path to training files
 trainDatDir = abspath(join(cfpath,"..","b_dataAggregation","processedData","EL-11122021"))
 # Path to model
-modelDir = abspath(join(saveBin,"saveDT"))
+modelDir = abspath(join(saveBin,"saveRF"))
 # Path to cross-validated files
 cvDatDir = abspath(join(cfpath,"..","c_dataValidation","saveBin"))
 # Make directory for saves
@@ -61,9 +61,11 @@ tmpSave = DataManager.load_obj(tmpSaveDir)
 X_train = tmpSave[0]
 X_test = tmpSave[1]
 y_train = tmpSave[2]
+y_train = y_train.reshape(len(y_train),1)
 y_test = tmpSave[3]
+y_test = y_test.reshape(len(y_test),1)
 X = np.vstack((X_train,X_test))
-y = np.vstack((y_train,y_test))
+y = np.ravel(np.vstack((y_train,y_test)))
 print("y_train: " + str(np.unique(y_train)))
 print("y_test: " + str(np.unique(y_test)))
 

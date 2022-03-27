@@ -21,7 +21,7 @@ from localPkg.preproc import ProcessPipe
 from localPkg.datmgmt import DataManager
 from localPkg.disp import LabelMaker
 #%% Globals
-dTime = '03022022' #date.today().strftime('%d%m%Y')
+dTime = '24032022' #date.today().strftime('%d%m%Y')
 results = []
 #%% PATHS 
 # Path to file
@@ -41,7 +41,7 @@ files = []
 
 for r,d,f in os.walk(savePath):
     for name in f:
-        if name == '_folderLog.txt' or name == 'train-data-ALL':
+        if name == '_folderLog.txt' or name == 'train-datav-ALL':
             continue
         #endif
         print(f"adding: {join(r,name)}")
@@ -58,3 +58,4 @@ for i in range(0,len(files)):
     y.append(files[i][1])
 #endfor
 DataManager.save_obj(saveName,(X,y))
+

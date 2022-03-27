@@ -30,7 +30,7 @@ from ..disp import LabelMaker
 from ..preproc import Filters
 
 
-
+callNum = 0
 def dispTS(startFunc = True, dispTitle = ""):
     """
     Summary : displays time stamp for when the function is first called to when its next called.
@@ -46,19 +46,18 @@ def dispTS(startFunc = True, dispTitle = ""):
     print(fString)
 
     """
-    global tStart, tEnd
+    global tStart, tEnd, callNum
     if startFunc:
         tStart = time.time()
         outStr = f"{dispTitle}"
     else:
         tEnd = time.time()
-        if dispTitle == "":
-            dispTitle = "DONE!"
-        else:
-            dispTitle = f"{dispTitle} done."
+        if dispTitle != "":
+            dispTitle = f"{dispTitle}"
         #endif
         tDif = tEnd - tStart
-        outStr = f"{dispTitle} : runtime {tDif}"
+        callNum += 1
+        outStr = f"{callNum}) {dispTitle}: runtime {tDif}"
     #endif
     return print(outStr)
 #enddef
@@ -257,7 +256,7 @@ def filter_pipeline(image,fftWidth,wienerWindowSize,medianWindowSize,multiA=1,mu
         DESCRIPTION.
 
     """
-    dispTS("")
+    dispTS()
     directionFeats = np.array([])
 
     #Normalize image
@@ -425,7 +424,8 @@ def _getSmallSquares(seg, nSet):
         #endif
         for ydim in tmpy:
             for xdim in tmpx:
-                subSegs.append((ydim,xdim))
+                tmp = (ydim,xdim)
+                subSegs.append(tmp)
             #endfor
         #endfor
         leftOver = [(tmpyy,tmpxx)]
@@ -477,11 +477,11 @@ def pad_segs(imList,boolList,f,train = True,fill_val = 0):
                     if train:
                         newBoolList.append(np.pad(boolList[count][ss],((0,NSET-yval),(0,NSET-xval)),'constant',constant_values=fill_val))
                     #endif
-                    newDoms.append((ss[0],ss[1]))
+                    newDoms.append(ss)
                 else:
                     newImList.append(imList[count][ss])
                     newBoolList.append(boolList[count][ss])
-                    newDoms.append((ss[0],ss[1]))
+                    newDoms.append(ss)
             #endfor
         #endif
         count += 1
@@ -567,7 +567,7 @@ def rotateNappend(imList, boolList, domains, train = True):
         #endfor
     #endfor
     dispTS(False,"rotateNappend")
-    return imsOut, boolOut
+    return imsOut, boolOut, domsOut
 #enddef
 
 def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwargs):
@@ -619,7 +619,7 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     padedImSeg, padedBoolSeg, newDoms = pad_segs(imList,boolList,f,train,0)
 
     #roate segments and append
-    rotatedIms, rotatedBools = rotateNappend(padedImSeg, padedBoolSeg)
+    rotatedIms, rotatedBools, domsOut = rotateNappend(padedImSeg, padedBoolSeg, newDoms)
 
     #generate hog features
     dispTS('appending hogs...')
@@ -635,7 +635,7 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
         #endif
         hogFeats.append(hogi[1]) #grab the array from hog() output
     #endfor
-    dispTS('hogs appended.')
+    dispTS(False, 'hogs appended.')
 
     #downsample feature sets (optional)
     # tmpInIm = padedImSeg.copy()
@@ -646,7 +646,7 @@ def feature_extract(imageIn, fftWidth, wieneerWindowSize, medWindowSize, **kwarg
     # dsFeatSets.append(dsImSegs, dsBoolSegs)  
     
     dispTS(False, "feature_extract")
-    return rotatedIms, rotatedBools, hogFeats, newDoms, dsFeatSets
+    return rotatedIms, rotatedBools, hogFeats, domsOut, dsFeatSets
 
 def get_hogs(hogFeats):
     """
@@ -692,6 +692,7 @@ def create_data(datX,imNum,**kwargs):
     yTrain (IF 'train' == True) : TYPE, list of int
         DESCRIPTION
     """
+    dispTS()
     train = True
     datY = []
     domains = []
@@ -707,7 +708,7 @@ def create_data(datX,imNum,**kwargs):
         #endif
     #endfor
         
-    dispTS()
+    
     yTrain = []
     tmpX = []
     for i in range(0,len(datX)):
@@ -729,7 +730,7 @@ def create_data(datX,imNum,**kwargs):
         imArr = np.tile(imNum,yTrain.shape)
         yTrain = np.hstack((yTrain,imArr))
         if domains:
-            yTrain = np.hstack((yTrain,domains))
+            return [outX, yTrain, domains]
         #endif
         return [outX, yTrain]
     #endif
@@ -1035,7 +1036,6 @@ def mainLoop(fileNum):
 def mainLoopTest(fileNum):
     from datetime import date
     from os.path import dirname, join, abspath, exists
-
     #%% Globals
     global dTime, cfpath, folderName, trainDatDir, aggDatDir, savePath
     dTime = date.today().strftime('%d%m%Y')
@@ -1084,7 +1084,7 @@ def mainLoopTest(fileNum):
     tmpX = create_data(chosenFeats,fileNum,train = False, domains = doms)
     xOut.append(tmpX)
 
-    dispTS(False)
+    dispTS(False, "mainLoop")
     print('     '+'Number of Segments : %i'%(len(chosenFeats)))
     #stack X
     xOut = np.vstack(xOut)

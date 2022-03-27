@@ -6,22 +6,14 @@ Created on Wed Jan 13 19:02:19 2021
 @version: 1.0
 """
 #%% IMPORTS
-from genericpath import exists
-import time
 import os
 import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 import multiprocessing as mp
-import numpy as np
-import matplotlib.pyplot as plt
-
-from os.path import join, abspath, dirname, exists
 from datetime import date
 from localPkg.preproc import ProcessPipe
-from localPkg.datmgmt import DataManager
-from localPkg.disp import LabelMaker
 #%% Globals
 dTime = date.today().strftime('%d%m%Y')
 
@@ -40,7 +32,7 @@ if __name__ == '__main__':
     for i in im_list:
         result = ProcessPipe.mainLoop(i)
         break
-    #endfor
+    #endfor 
 
     #%% Loop Start - multiprocessing documentation ex
     #! see. https://docs.python.org/3/library/multiprocessing.html !#

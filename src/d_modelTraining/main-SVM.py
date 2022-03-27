@@ -48,12 +48,6 @@ except FileExistsError:
 #endtry
 #%% Script Params
 # PARMS
-channel = 2
-ff_width = 121
-wiener_size = (5,5)
-med_size = 10
-start = 0
-count = 42
 dTime = '19032022' #date.today().strftime('%d%m%Y')
 #%% GRIDSEARCH PARAMS
 
@@ -93,7 +87,7 @@ param_grid2 = [{'svc__C': param_range2_C,
 #                 'svc__kernel':['poly'],
 #                 'svc__degree':poly_range}]
 
-#%%
+#%% Load k-split Data (k=10)
 tmpSaveDir = join(cvDatDir, ('CVjoined_data_'+dTime+'.pkl'))
 tmpSave = DataManager.load_obj(tmpSaveDir)
 X_train = tmpSave[0]

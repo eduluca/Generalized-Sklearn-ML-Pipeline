@@ -135,12 +135,14 @@ def save_obj(rootPath, obj):
     with open(rootPath, 'wb') as outfile:
         pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
     'end with'
+    print('object saved.')
 'end def'
 
 def load_obj(rootPath):
     with open(rootPath, 'rb') as infile:
         result = pickle.load(infile)
     'end with'
+    print('object loaded.')
     return result
 'end def'
 

@@ -75,4 +75,4 @@ imDir = DataManager.DataMang(folderName)
 fileNum = im_list[1]
 predictions = y[(y[:,1] ==  fileNum),0]
 imageOut,nW,nH,_,imName,imNum = imDir.openFileI(fileNum,'train')
-overlayValidate(imageOut,predictions,,saveBin)
+overlayValidate(imageOut,predictions,domains,saveBin)

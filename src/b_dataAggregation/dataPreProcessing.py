@@ -30,19 +30,7 @@ dTime = date.today().strftime('%d%m%Y')
 im_list = [3,4,5,6,10,12,13,14,21,26,27,28,29,35] #[i for i in range(start,im_dir.dir_len)]
 
 #%% DEFINITIONS
-def robust_save(fname):
-    plt.savefig(join(fname,'overlayed_predictions.png',dpi=200,bbox_inches='tight'))
-#enddef
 
-# Callback function to collec the output from parallel processing in 'result'
-def collect_result(result):
-    global results
-    results.append(result)
-
-def directoryHandler(dirDir):
-    curDir = DataManager.DataMang(folderName)
-    fs = curDir.files
-#enddef
 
 #%% LOOP: Image Parsing/Pre-Processing 
 if __name__ == '__main__':

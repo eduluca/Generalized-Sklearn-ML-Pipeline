@@ -34,15 +34,18 @@ modelDir = abspath(join(saveBin,"saveDT"))
 # Path to cross-validated files
 cvDatDir = abspath(join(cfpath,"..","c_dataValidation","saveBin"))
 # Make directory for saves
-mkdir(abspath(join(modelDir)))
-
+try:
+    mkdir(abspath(join(modelDir)))
+except FileExistsError:
+  print('Save folder for model already exists!')
+#endtry
 #%% DEFINITIONS & PARAMS
 def robust_save(fname):
     plt.savefig(join(saveBin,'overlayed_predictions.png',dpi=200,bbox_inches='tight'))
 #enddef
 
 #%% PARAMS
-dTime = '12242021' #date.today().strftime('%d%m%Y')
+dTime = '03022022' #date.today().strftime('%d%m%Y')
 
 #%% Load k-split Data (k=10)
 tmpSaveDir = join(cvDatDir, ('CVjoined_data_'+dTime+'.pkl'))
@@ -50,9 +53,11 @@ tmpSave = DataManager.load_obj(tmpSaveDir)
 X_train = tmpSave[0]
 X_test = tmpSave[1]
 y_train = tmpSave[2]
+y_train = y_train.reshape(len(y_train),1)
 y_test = tmpSave[3]
+y_test = y_test.reshape(len(y_test),1)
 X = np.vstack((X_train,X_test))
-y = np.vstack((y_train,y_test))
+y = np.ravel(np.vstack((y_train,y_test)))
 print("y_train: " + str(np.unique(y_train)))
 print("y_test: " + str(np.unique(y_test)))
 

@@ -25,7 +25,7 @@ from sklearn.ensemble import  RandomForestClassifier
 
 from xgboost import XGBClassifier
 
-import localPkg.datamgmt as DataManager
+import localPkg.datmgmt as DataManager
 
 #%% PATHS 
 # Path to file

@@ -5,7 +5,7 @@ import numpy as np
 # initialize the list of reference points and boolean indicating
 # whether cropping is being performed or not
 import csv
-
+from ..datmgmt import DataManager
 refPt = []
 
 cropping = False
@@ -446,7 +446,7 @@ def main(window,tmpSaveF,permSaveF):
     # keep looping until the 'q' key is pressed
     while k != ord('q') and k != 27 and cv2.getWindowProperty(window.WINDOW_NAME,0) >= 0:
         k = cv2.waitKey(0) 
-        window.menuChange(k,tmpSaveF)
+        window.menuChange(k,tmpSaveF,permSaveF)
     'end while'
     # close all open windows
     cv2.destroyAllWindows()

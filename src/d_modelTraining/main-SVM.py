@@ -112,7 +112,7 @@ print("starting modeling career...")
 """
 gs = GridSearchCV(estimator = pipe_svc,
                   param_grid = param_grid2,
-                  scoring = 'roc_auc',
+                  scoring = 'f1',
                   cv = 5,
                   n_jobs = -1,
                   verbose = 10)

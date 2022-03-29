@@ -41,6 +41,7 @@ tmpLoadDir = join(aggDatDir, 'train-data-ALL.pkl') #join(aggDatDir, ('joined_dat
 tmpDat = DataManager.load_obj(tmpLoadDir)
 X = tmpDat[0]
 y = tmpDat[1]
+doms = tmpDat[2]
 # del tmpDat
 #%% Train-Test Split
 # print('Splitting Data...')
@@ -70,9 +71,17 @@ y = tmpDat[1]
 
 #%%
 im_list = [3,4,5,6,10,12,13,14,21,26,27,28,29,35]
-imDir = DataManager.DataMang(folderName)
-fileNum = im_list[1]
-predictions = y[fileNum][:,0]
-domains = y[fileNum][:,2]
-imageOut,nW,nH,_,imName,imNum = imDir.openFileI(fileNum,'train')
-overlayValidate(imageOut,predictions,domains,saveBin)
+channel = 2
+##
+for fileNum in range(0,len(y)):
+    rotateSlice = np.arange(0,len(y[fileNum]),4)
+    imDir = DataManager.DataMang(folderName)
+    predictsI = y[fileNum][rotateSlice,0]
+    domainI = np.array(doms[fileNum])
+    imageOut,nW,nH,_,imName,imNum = imDir.openFileI(y[fileNum][0,1],'train')
+    print('   '+'{},{}.) Observing Image : {}'.format(fileNum,imNum,imName))
+    #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
+    #the notation RGB (0,1,2 respectively))=
+    # imageIn = imageOut[:,:,channel]
+    overlayValidate(imageOut,predictsI,domainI,saveBin)
+#endfor

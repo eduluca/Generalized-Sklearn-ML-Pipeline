@@ -40,7 +40,7 @@ wiener_size = (5,5)
 med_size = 10
 start = 0
 count = 42
-dTime = '24032022' #date.today().strftime('%d%m%Y')
+dTime = date.today().strftime('%d%m%Y')
 #%% Load Data
 print('Loading Data...')
 tmpLoadDir = join(aggDatDir, 'train-data-ALL.pkl') #join(aggDatDir, ('joined_data_'+dTime+'.pkl'))

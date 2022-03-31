@@ -76,7 +76,7 @@ XGBmodel = XGBClassifier(max_depth = coef[0],subsample = coef[1],n_estimators = 
 #%% MODEL FITTING
 print('fitting...')
 model = XGBmodel.fit(X_train,y_train)
-y_score = model.decision_function(X_test)
+y_score = evals_result = model.evals_result()
 print(model.score(X_test,y_test))
 filename = join(modelDir,('fittedXGB_'+dTime+'.sav'))
 pickle.dump(model, open(filename, 'wb'))

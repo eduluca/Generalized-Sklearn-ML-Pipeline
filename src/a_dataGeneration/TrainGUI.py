@@ -17,19 +17,14 @@ from localPkg.disp import LabelMaker
 from localPkg.datmgmt import DataManager
 
 #%% Main GUI
-
 if __name__ == "__main__":
+    from localModules import DataManager
     import matplotlib.pyplot as plt
     from os.path import join, abspath
     dirName = os.path.dirname(__file__)
     permSaveF = abspath(join(dirName,"..","b_dataAggregation","processedData"))
     tmpSaveF = join(dirName,"tmpSaves")
     foldername = join(dirName,"rawData")
-    try:
-        os.mkdir(tmpSaveF)
-    except:
-        print(f'Directory already exists: {tmpSaveF}')
-    #endtry
     # dealing with the Channel situation: display RGB but edit gray scale
     im_dir = DataManager.DataMang(foldername)
     count = 0
@@ -43,17 +38,17 @@ if __name__ == "__main__":
         num = wobj.IMG_NUM
         name = wobj.IMG_NAME
         print("loading %s...."%(name))
-        wind = LabelMaker.main(wobj,tmpSaveF,permSaveF)
+        wind = main(wobj,tmpSaveF,permSaveF)
     else:
         ansload = input("What image number would you like to start from?: [int = 0 to %i] "%im_dir.dir_len)
         im_list = [i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)] #[i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)]
         for gen in im_dir.open_dir(im_list,'train'):
             image,nW,nH,chan,name,fN = gen
-            wobj = LabelMaker.PanZoomWindow(channel,image,name,im_list[count],windowName = name)
+            wobj = PanZoomWindow(channel,image,name,im_list[count],windowName = name)
             print("loading %s..."%(name))
-            wind = LabelMaker.main(wobj,tmpSaveF,permSaveF)
+            wind = main(wobj,tmpSaveF,permSaveF)
         # tmp_image = Filters.normalize_img(image)
-        bool_im = LabelMaker.import_train_data(name,(nH,nW),permSaveF)
+        bool_im = import_train_data(name,(nH,nW),permSaveF)
         wind.write2csv(tmpSaveF)
         plt.imshow(bool_im)
         plt.show()
@@ -61,8 +56,6 @@ if __name__ == "__main__":
         'end for'
     "end if"
 'end if'
-
-
 # VERSION HISTORY
 #6/29/2020: fillPoly() works, storage works, reconstruction works, just could use some user friendliness
 #10/11/2021: WE BACK BB, fixed some menu functionality and added comments. Specifically added infinite redaction of lines and improved menu responsiveness.

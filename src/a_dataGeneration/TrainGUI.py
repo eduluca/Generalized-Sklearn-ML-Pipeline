@@ -34,6 +34,8 @@ if __name__ == "__main__":
     im_dir = DataManager.DataMang(foldername)
     count = 0
     channel = 2
+    comparedDir = im_dir.compareDir(permSaveF)
+    print(f'{comparedDir}')
     ansload = input("Would you like to load a previous image? [Y/N] ")
     if ansload == 'y':
         filename = input('load: [Input Name] ')

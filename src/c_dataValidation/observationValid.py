@@ -19,6 +19,7 @@ from os.path import dirname, join, abspath
 from datetime import date
 from localPkg.datmgmt import DataManager
 from localPkg.preproc.ProcessPipe import overlayValidate
+from localPkg.disp import LabelMaker
 
 #%% PATHS 
 print("Number of processors: ", mp.cpu_count())
@@ -70,8 +71,34 @@ doms = tmpDat[2]
 # print('     '+"y_test: " + str(np.unique(y_test)))
 
 #%%
+# im_list = [3,4,5,6,10,12,13,14,21,26,27,28,29,35]
+# channel = 2
+# ##
+# for fileNum in range(0,len(y)):
+#     rotateSlice = np.arange(0,len(y[fileNum]),4)
+#     imDir = DataManager.DataMang(folderName)
+#     predictsI = y[fileNum][rotateSlice,0]
+#     domainI = np.array(doms[fileNum])
+#     imageOut,nW,nH,_,imName,imNum = imDir.openFileI(y[fileNum][0,1],'train')
+#     print('   '+'{},{}.) Observing Image : {}'.format(fileNum,imNum,imName))
+#     #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
+#     #the notation RGB (0,1,2 respectively))=
+#     # imageIn = imageOut[:,:,channel]
+#     overlayValidate(imageOut,predictsI,domainI,saveBin)
+# #endfor
+
+#%%
+dirName = os.path.dirname(__file__)
+
+# rawFName = join(dirName,"rawData")
+# im_dir = DataManager.DataMang(rawFName)
+# print('INFO: Directory contains %i files'%(im_dir.dir_len))
+# #Find file similar between the bin and tif files
+# comparedDir = im_dir.compareDir(permSaveF)
+
 im_list = [3,4,5,6,10,12,13,14,21,26,27,28,29,35]
 channel = 2
+permSaveF = abspath(join(dirName,"..","b_dataAggregation","processedData","EL-11122021"))
 ##
 for fileNum in range(0,len(y)):
     rotateSlice = np.arange(0,len(y[fileNum]),4)
@@ -83,5 +110,6 @@ for fileNum in range(0,len(y)):
     #only want the red channel (fyi: cv2 is BGR (0,1,2 respectively) while most image processing considers 
     #the notation RGB (0,1,2 respectively))=
     # imageIn = imageOut[:,:,channel]
-    overlayValidate(imageOut,predictsI,domainI,saveBin)
+    train_bool = LabelMaker.import_train_data(imName,(nH,nW),permSaveF)
+    overlayValidate(imageOut,predictsI,domainI,saveBin,boolIm = train_bool)
 #endfor

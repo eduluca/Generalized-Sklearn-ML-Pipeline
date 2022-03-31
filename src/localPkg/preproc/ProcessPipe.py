@@ -333,7 +333,7 @@ def im_watershed(imageIn,train = True, boolim = np.array([]),multiA=3,multiD=2):
     # normalize image than convolve a gaussian kernel to expand feature discovery.
     gausIm = convolve(imageIn,Filters._d3gaussian(16,multiA,multiD))
     # perform a rough thresholding
-    segments = gausIm > (np.mean(gausIm)-np.std(gausIm)/(2*np.pi)) #adding np.std(gausIm)/2 gives some more specificity. 
+    segments = gausIm > np.median(gausIm) #(np.mean(gausIm)-np.std(gausIm)/(np.pi)) #adding np.std(gausIm)/2 gives some more specificity. 
     # perform distance calculations to determine segment proximities.
     D = distance_transform_edt(segments)
     # get local maxima
@@ -836,6 +836,11 @@ def overlayValidate(imageIn,predictions,domains,saveDir,**kwargs):
         DESCRIPTION.
 
     """
+    for key,val in kwargs.items():
+        if key == 'boolIm':
+            boolIm = val
+        #endif
+    #endfor
     global cnt
     nH= imageIn.shape[0]
     nW= imageIn.shape[1]
@@ -843,7 +848,8 @@ def overlayValidate(imageIn,predictions,domains,saveDir,**kwargs):
     falseIm = np.zeros((nH,nW)).astype(np.float32)
     # true_im = np.zeros((nH,nW)).astype(np.float32)
     plt.figure("Overlayed Predictions for Test Domain",figsize = (nH/100,nW/100))  
-    plt.imshow(imageIn*10)
+    plt.imshow(imageIn[:,:,2]*5)
+    # plt.imshow(imageIn[:,:,1]v, alpha = 0.5)
     legend_ele = [Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0,label = "label: (actual,predict)"),
                   Patch(facecolor = "red",label = "True"),
                   Patch(facecolor = "orange",label = "False")]
@@ -862,6 +868,7 @@ def overlayValidate(imageIn,predictions,domains,saveDir,**kwargs):
         # plt.text(x1, y1-5, s, fontsize = 10, bbox=dict(fill=False, edgecolor='none', linewidth=2))
     #endfor
     plt.legend(handles = legend_ele, loc = 'lower right')
+    plt.imshow(gen_mask(boolIm), alpha=1, cmap=ListedColormap(['yellow']))
     plt.imshow(gen_mask(predIm), alpha=0.3, cmap=ListedColormap(['red']))
     plt.imshow(gen_mask(falseIm), alpha=0.4, cmap=ListedColormap(['orange']))
     # plt.show()

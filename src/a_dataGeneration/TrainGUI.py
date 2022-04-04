@@ -4,7 +4,7 @@ Created on Mon Apr 13 15:04:48 2020
 
 @author: jsalm
 """
-
+#%%
 import time
 import os
 import sys
@@ -29,28 +29,44 @@ if __name__ == "__main__":
     im_dir = DataManager.DataMang(foldername)
     count = 0
     channel = 2
-    comparedDir = im_dir.compareDir(permSaveF)
-    print(f'{comparedDir}')
+    chsnDir = join(permSaveF,'EL-11122021')
+
+    comparedDir = im_dir.compareDir(chsnDir)
     ansload = input("Would you like to load a previous image? [Y/N] ")
-    if ansload == 'y':
-        filename = input('load: [Input Name] ')
-        loadf = join(tmpSaveF,filename+'.pkl')
-        wobj = DataManager.load_obj(loadf)
-        wobj.init_wind()
+    if ansload == 'Y':
+        print('Available files to load:')
+        cnt = 0
+        for ss in comparedDir:
+            print(f'{cnt}) {ss}')
+            cnt += 1
+        #endfor
+        fNum = input('load: [Input Number:int] ')        
+        loadf = join(foldername,comparedDir[int(fNum)]+'.tif')
+        im = im_dir._load_image(loadf)
+        nH,nW,chan = im.shape
+        wobj = LabelMaker.PanZoomWindow(channel,im,comparedDir[int(fNum)],int(fNum),windowName = comparedDir[int(fNum)])
+        wobj.overlayOldData(comparedDir[int(fNum)],(nH,nW),chsnDir)
         num = wobj.IMG_NUM
         name = wobj.IMG_NAME
         print("loading %s...."%(name))
-        wind = main(wobj,tmpSaveF,permSaveF)
+        print(f"start with old data: {wobj.OOD}")
+        wind = wobj.main(tmpSaveF,permSaveF)
     else:
+        print('Available files to load:')
+        cnt = 0
+        for ss in im_dir.files:
+            print(f'{cnt}) {ss}')
+            cnt += 1
+        #endfor
         ansload = input("What image number would you like to start from?: [int = 0 to %i] "%im_dir.dir_len)
         im_list = [i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)] #[i for i in range(im_dir.dir_len-1,-1,-1)] #[i for i in range(0,im_dir.dir_len)]
         for gen in im_dir.open_dir(im_list,'train'):
             image,nW,nH,chan,name,fN = gen
-            wobj = PanZoomWindow(channel,image,name,im_list[count],windowName = name)
+            wobj =LabelMaker.PanZoomWindow(channel,image,name,im_list[count],windowName = name)
             print("loading %s..."%(name))
-            wind = main(wobj,tmpSaveF,permSaveF)
+            wind = wobj.main(wobj,tmpSaveF,permSaveF)
         # tmp_image = Filters.normalize_img(image)
-        bool_im = import_train_data(name,(nH,nW),permSaveF)
+        bool_im = LabelMaker.import_train_data(name,(nH,nW),permSaveF)
         wind.write2csv(tmpSaveF)
         plt.imshow(bool_im)
         plt.show()
@@ -61,3 +77,5 @@ if __name__ == "__main__":
 # VERSION HISTORY
 #6/29/2020: fillPoly() works, storage works, reconstruction works, just could use some user friendliness
 #10/11/2021: WE BACK BB, fixed some menu functionality and added comments. Specifically added infinite redaction of lines and improved menu responsiveness.
+
+# %%

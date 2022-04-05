@@ -42,7 +42,7 @@ if __name__ == "__main__":
         #endfor
         fNum = input('load: [Input Number:int] ')        
         loadf = join(foldername,comparedDir[int(fNum)]+'.tif')
-        im = im_dir._load_image(loadf)
+        im = im_dir._load_image_train(loadf)
         nH,nW,chan = im.shape
         wobj = LabelMaker.PanZoomWindow(channel,im,comparedDir[int(fNum)],int(fNum),windowName = comparedDir[int(fNum)])
         wobj.overlayOldData(comparedDir[int(fNum)],(nH,nW),chsnDir)

@@ -155,6 +155,7 @@ class PanZoomWindow(object):
         self.poly_counter = -1
         self.od = ['',(),'']
         self.OOD = False
+        self.OldData = np.array([]);
         self.init_wind()
     'end def'
     def init_wind(self):
@@ -352,21 +353,23 @@ class PanZoomWindow(object):
     def saveOldData(self):
         pass
     #enddef
-    def importOldData(self):
-        bitIm = np.zeros(self.img.shape).astype(np.float32)
+    def importOldData(self,buf):
+        bVal = 200
+        bitIm = np.zeros(self.img.shape).astype(np.uint8)
         def import_point_dataBit(fName,imshape,permSaveF):            
             bitimage = np.fromfile(os.path.join(permSaveF,fName+'.bin'),dtype='int16')
             bitimage = bitimage.reshape(imshape)
-            bitIm[:,:,0] = bitimage.astype(np.float32)
+            self.OldData = bitimage
+            bitIm[:,:,0] = bitimage.astype(np.uint8)
             return bitIm
         #enddef
         if self.OOD:
             print('overlaying data...')
             bitIm = import_point_dataBit(self.od[0],self.od[1],self.od[2])
-            outIm = cv2.add(self.img,bitIm)
-            self.img = outIm
+            outIm = cv2.add(buf,bVal*bitIm)
+            return (1, outIm)
         else:
-            return 0
+            return (0, [])
         #endif
     #enddef
     def overlayOldData(self,fName,imshape,permSaveF):
@@ -400,9 +403,11 @@ class PanZoomWindow(object):
                 temp_wind = self.img_orig.copy()
             buf = self.apply_brightness_contrast(temp_wind,pzs.AlphaB,pzs.AlphaC,pzs.GammaB,pzs.GammaC)
             self.img = buf
+            (res,bufO) = self.importOldData(buf)
+            if res:
+                self.img = bufO
             #endif
         #endif
-        self.importOldData()
         cv2.imshow(self.WINDOW_NAME, self.img[int(pzs.ul[0]):int(pzs.ul[0]+pzs.shape[0]), int(pzs.ul[1]):int(pzs.ul[1]+pzs.shape[1])])
     #enddef
     def export_point_data(self,permSaveF):
